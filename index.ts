@@ -3,6 +3,7 @@ import {
     FollowCheckerParser,
     IndexCheckerParser,
     RangeCheckerParser,
+    SheetCheckerParser,
     SizeCheckerParser,
 } from "./src/checker";
 import {
@@ -31,6 +32,7 @@ import {
     registerChecker,
     registerProcessor,
     registerType,
+    SHEET_CHECKER,
 } from "./src/xlsx";
 
 export * from "./src/checker";
@@ -56,6 +58,7 @@ registerChecker("follow", FollowCheckerParser);
 registerChecker(EXPR_CHECKER, ExprCheckerParser);
 registerChecker(RANGE_CHECKER, RangeCheckerParser);
 registerChecker(INDEX_CHECKER, IndexCheckerParser);
+registerChecker(SHEET_CHECKER, SheetCheckerParser);
 
 registerProcessor("config", ConfigProcessor);
 registerProcessor("keyvalue", KeyValueProcessor, 800);

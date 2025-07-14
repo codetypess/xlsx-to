@@ -165,32 +165,6 @@ export const filterValues = <T>(
     return filterKeys(value, sort, filter).map((k) => value[k] as T);
 };
 
-export const copy = <T>(value: T): T => {
-    if (value && typeof value === "object") {
-        if (Array.isArray(value)) {
-            const arr = value.map(copy);
-            for (const k in value) {
-                if (k.startsWith("!")) {
-                    arr[k] = value[k] as TValue;
-                }
-            }
-            return arr as T;
-        } else {
-            const obj: TObject = {};
-            for (const k in value) {
-                if (k.startsWith("!")) {
-                    obj[k] = value[k] as TValue;
-                } else {
-                    obj[k] = copy((value as TObject)[k]) as TValue;
-                }
-            }
-            return obj as T;
-        }
-    } else {
-        return value as T;
-    }
-};
-
 export const toPascalCase = (str: string): string => {
     return str
         .replace(/^_+/, "")

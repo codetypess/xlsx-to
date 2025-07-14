@@ -1,18 +1,11 @@
 import xlsx from "xlsx";
 import { type StringifyContext } from "./stringify";
-import {
-    checkType,
-    copy,
-    filterKeys,
-    filterValues,
-    isNullOrUndefined,
-    toRef,
-    toString,
-} from "./util";
+import { checkType, filterKeys, filterValues, isNullOrUndefined, toRef, toString } from "./util";
 
 export const RANGE_CHECKER = "xlsx.checker.range";
 export const INDEX_CHECKER = "xlsx.checker.index";
 export const EXPR_CHECKER = "xlsx.checker.expr";
+export const SHEET_CHECKER = "xlsx.checker.sheet";
 
 export const enum Type {
     Row = "xlsx.type.row",
@@ -36,6 +29,8 @@ export type Tag = {
     ["!enum"]?: string;
     /** comment */
     ["!comment"]?: string;
+    /** writer */
+    ["!writer"]?: string[];
     /** row index */
     ["!index"]?: number;
     /** field */
@@ -289,6 +284,19 @@ const parseChecker = (path: string, refer: string, str: string) => {
                     def: s,
                     exec: parser(s),
                 };
+            } else if (s.endsWith("#")) {
+                /**
+                 * file#
+                 * #
+                 */
+                const parser = checkerParsers[SHEET_CHECKER];
+                const [, file = ""] = s.match(/^([^#]*)#$/) ?? [];
+                checker = {
+                    name: SHEET_CHECKER,
+                    force,
+                    def: s,
+                    exec: parser(file || path),
+                };
             } else if (s.includes("#")) {
                 /**
                  * id=task#main.id
@@ -469,6 +477,7 @@ const readBody = (path: string, data: xlsx.WorkBook) => {
                 }
                 cell["!field"] = field;
                 cell["!row"] = row;
+                cell["!writer"] = field.writers;
                 row[field.name] = cell;
                 if (field.index === 0) {
                     row["!key"] = cell;
@@ -606,8 +615,29 @@ export const parse = (files: string[], headerOnly: boolean = false) => {
     }
 };
 
-export const filter = (workbook: Workbook, writer: string, headerOnly: boolean = false) => {
+export const copyOf = (workbook: Workbook, writer: string, headerOnly: boolean = false) => {
     const result: Workbook = { ...workbook, sheets: {} };
+
+    const copy = <T extends TValue>(value: T): T => {
+        if (value && typeof value === "object") {
+            if (value["!writer"] && !value["!writer"].includes(writer)) {
+                return null as T;
+            }
+            const obj: TObject = (Array.isArray(value) ? [] : {}) as TObject;
+            for (const k in value) {
+                let v = (value as TObject)[k];
+                if (!k.startsWith("!")) {
+                    v = copy(v);
+                }
+                if (v !== null) {
+                    obj[k] = v;
+                }
+            }
+            return obj as T;
+        } else {
+            return value;
+        }
+    };
 
     for (const sheetName in workbook.sheets) {
         const sheet = workbook.sheets[sheetName];
@@ -623,11 +653,6 @@ export const filter = (workbook: Workbook, writer: string, headerOnly: boolean =
                         }
                     }
                     resultSheet.data[k] = row;
-                    for (const field of sheet.fields) {
-                        if (!field.writers.includes(writer)) {
-                            delete row[field.name];
-                        }
-                    }
                 }
             } else {
                 resultSheet.data = copy(sheet.data);

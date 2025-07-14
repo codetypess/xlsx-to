@@ -1,6 +1,6 @@
 import { convertToConfig, convertToFold, convertToKeyValue, convertToMap } from "./transform";
 import { filterKeys } from "./util";
-import { assert, error, filter, Processor, Sheet, TObject, Workbook, writers } from "./xlsx";
+import { assert, copyOf, error, Processor, Sheet, TObject, Workbook, writers } from "./xlsx";
 
 //-----------------------------------------------------------------------------
 // Stringify
@@ -46,7 +46,7 @@ export const StringifyProcessor: Processor = (
         error(`Stringify rule not found: ${ruleName}`);
     }
     for (const k in writers) {
-        const filtered = filter(workbook, k);
+        const filtered = copyOf(workbook, k);
         const writer = writers[k];
         writer(filtered.path, rule(filtered, k), "stringify");
     }

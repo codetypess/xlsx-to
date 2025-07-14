@@ -1,4 +1,4 @@
-import { CheckerParser, createColumnIndexer, error, TCell } from "./xlsx";
+import { CheckerParser, createColumnIndexer, error, get, TCell } from "./xlsx";
 
 export const SizeCheckerParser: CheckerParser = (arg) => {
     const length = Number(arg);
@@ -80,5 +80,14 @@ export const IndexCheckerParser: CheckerParser = (file, sheetName, key, idx) => 
              */
             return typeof value === "object" && indexer.has(value[idx]);
         }
+    };
+};
+
+export const SheetCheckerParser: CheckerParser = (file) => {
+    return (cell, row, field, errors) => {
+        const path = file.replace(/\.xlsx$/, "") + ".xlsx";
+        const workbook = get(path);
+        const sheet = workbook.sheets[cell.v as string];
+        return sheet !== undefined;
     };
 };
