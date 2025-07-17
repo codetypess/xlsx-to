@@ -13,25 +13,29 @@ export const registerStringifyRule = (name: string, rule: StringifyRule) => {
     rules[name] = rule;
 };
 
-export const mergeSheet = (workbook: Workbook, writer: string) => {
+export const mergeSheet = (workbook: Workbook, writer: string, sheetNames?: string[]) => {
     const result: TObject = {};
-    for (const sheetName in workbook.sheets) {
-        const sheet = workbook.sheets[sheetName];
-        for (const k of keys(sheet.data)) {
-            const row = sheet.data[k];
-            if (result[k]) {
-                error(`Duplicate key: ${k}`);
+    for (const k in workbook.sheets) {
+        if (!sheetNames || sheetNames.includes(k)) {
+            const sheet = workbook.sheets[k];
+            for (const k of keys(sheet.data)) {
+                const row = sheet.data[k];
+                if (result[k]) {
+                    error(`Duplicate key: ${k}`);
+                }
+                result[k] = row;
             }
-            result[k] = row;
         }
     }
     return result;
 };
 
-export const simpleSheet = (workbook: Workbook, writer: string) => {
+export const simpleSheet = (workbook: Workbook, writer: string, sheetNames?: string[]) => {
     const result: TObject = {};
     for (const k in workbook.sheets) {
-        result[k] = workbook.sheets[k].data;
+        if (!sheetNames || sheetNames.includes(k)) {
+            result[k] = workbook.sheets[k].data;
+        }
     }
     return result;
 };

@@ -18,7 +18,7 @@ export const checkType = <T>(value: TValue, type: Type | string) => {
     throw new Error(`Expect type '${type}', but got '${t}'`);
 };
 
-export const isNullOrUndefined = (value: TValue) => {
+export const isNull = (value: TValue): value is null | undefined => {
     if (value === null || value === undefined) {
         return true;
     }
@@ -31,13 +31,17 @@ export const isNullOrUndefined = (value: TValue) => {
     return false;
 };
 
+export const isNotNull = (value: TValue): value is Exclude<TValue, null | undefined> => {
+    return !isNull(value);
+};
+
 /**
  * Convert a cell to a string.
  * @param cell - The cell to convert.
  * @returns The string value of the cell, or empty string if the cell.v is null or undefined.
  */
 export const toString = (cell?: TCell) => {
-    if (!cell || isNullOrUndefined(cell)) {
+    if (isNull(cell)) {
         return "";
     }
     if (typeof cell.v === "string") {
@@ -122,14 +126,11 @@ export const format = (str: string, vars: Record<string, string>) => {
     return lines.join("\n");
 };
 
-export const keys = (value: TObject, sort?: boolean, filter?: (v: TValue) => boolean) => {
+export const keys = (o: object, filter?: (v: TValue) => boolean) => {
+    const value = o as TObject;
     const ks = Object.keys(value).filter(
         (k) => !k.startsWith("!") && (!filter || filter(value[k]))
     );
-
-    if (!sort) {
-        return ks;
-    }
 
     if (value["!enum"]) {
         return ks.sort((a, b) => {
@@ -157,8 +158,8 @@ export const keys = (value: TObject, sort?: boolean, filter?: (v: TValue) => boo
     }
 };
 
-export const values = <T>(value: TObject, sort?: boolean, filter?: (v: TValue) => boolean): T[] => {
-    return keys(value, sort, filter).map((k) => value[k] as T);
+export const values = <T>(o: TObject, filter?: (v: TValue) => boolean): T[] => {
+    return keys(o, filter).map((k) => o[k] as T);
 };
 
 export const toPascalCase = (str: string): string => {

@@ -1,4 +1,4 @@
-import { escape, isNullOrUndefined, isNumericKey, keys } from "./util";
+import { escape, isNotNull, isNumericKey, keys } from "./util";
 import { TArray, TCell, TObject, TValue, Type } from "./xlsx";
 
 export class StringBuffer {
@@ -114,17 +114,15 @@ export const stringifyJson = (data: TValue, option?: JsonStringifyOption) => {
         } else if (Array.isArray(value)) {
             writeJsonArray(value);
         } else {
-            let item: TValue = value;
-            if (item["!type"] === Type.Cell) {
-                const cell = item as unknown as TCell;
-                item = cell.v as TValue;
+            if (value["!type"] === Type.Cell) {
+                value = value.v;
             }
-            if (typeof item !== "object" || item === null || item === undefined) {
-                writeJsonValue(item, false);
-            } else if (Array.isArray(item)) {
-                writeJsonArray(item);
+            if (typeof value !== "object" || value === null) {
+                writeJsonValue(value, false);
+            } else if (Array.isArray(value)) {
+                writeJsonArray(value);
             } else {
-                writeJsonObject(item as TObject);
+                writeJsonObject(value as TObject);
             }
         }
     }
@@ -139,7 +137,7 @@ export const stringifyJson = (data: TValue, option?: JsonStringifyOption) => {
             return;
         }
 
-        const ks = keys(value, true, (v) => !isNullOrUndefined(v));
+        const ks = keys(value, isNotNull);
         const space = option!.indent! > 0 ? " " : "";
         buffer.writeString("{");
         buffer.linefeed();
@@ -241,17 +239,15 @@ export const stringifyLua = (data: TValue, option?: LuaStringifyOption) => {
         } else if (Array.isArray(value)) {
             writeLuaArray(value);
         } else {
-            let item: TValue = value;
-            if (item["!type"] === Type.Cell) {
-                const cell = item as unknown as TCell;
-                item = cell.v as TValue;
+            if (value["!type"] === Type.Cell) {
+                value = value.v;
             }
-            if (typeof item !== "object" || item === null || item === undefined) {
-                writeLuaValue(item, false);
-            } else if (Array.isArray(item)) {
-                writeLuaArray(item);
+            if (typeof value !== "object" || value === null) {
+                writeLuaValue(value, false);
+            } else if (Array.isArray(value)) {
+                writeLuaArray(value);
             } else {
-                writeLuaObject(item as TObject);
+                writeLuaObject(value as TObject);
             }
         }
     }
@@ -266,7 +262,7 @@ export const stringifyLua = (data: TValue, option?: LuaStringifyOption) => {
             return;
         }
 
-        const ks = keys(value, true, (v) => !isNullOrUndefined(v));
+        const ks = keys(value, isNotNull);
         const space = option!.indent! > 0 ? " " : "";
         buffer.writeString("{");
         buffer.linefeed();
@@ -377,7 +373,7 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
         } else if (value["!enum"]) {
             const enumName = value["!enum"];
             const enumComment = value["!comment"];
-            const ks = keys(value as TObject, true, (v) => !isNullOrUndefined(v));
+            const ks = keys(value as TObject, isNotNull);
             writeTsComment(enumComment, enumBuffer);
             enumBuffer.writeLine(`export enum ${enumName} {`);
             enumBuffer.indent();
@@ -396,17 +392,15 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
             enumBuffer.writeLine("");
             buffer.writeString(enumName);
         } else {
-            let item: TValue = value;
-            if (item["!type"] === Type.Cell) {
-                const cell = item as unknown as TCell;
-                item = cell.v as TValue;
+            if (value["!type"] === Type.Cell) {
+                value = value.v;
             }
-            if (typeof item !== "object" || item === null || item === undefined) {
-                writeTsValue(item, false);
-            } else if (Array.isArray(item)) {
-                writeTsArray(item);
+            if (typeof value !== "object" || value === null) {
+                writeTsValue(value, false);
+            } else if (Array.isArray(value)) {
+                writeTsArray(value);
             } else {
-                writeTsObject(item as TObject);
+                writeTsObject(value as TObject);
             }
         }
     }
@@ -421,7 +415,7 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
             return;
         }
 
-        const ks = keys(value, true, (v) => !isNullOrUndefined(v));
+        const ks = keys(value, isNotNull);
         const space = option!.indent! > 0 ? " " : "";
         buffer.writeString("{");
         buffer.linefeed();

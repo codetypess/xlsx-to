@@ -1,4 +1,4 @@
-import { checkType, isNullOrUndefined, keys, toString, values } from "./util";
+import { checkType, isNotNull, isNull, keys, toString, values } from "./util";
 import {
     Sheet,
     TArray,
@@ -16,7 +16,7 @@ import {
 export const convertToDefine = (sheet: Sheet) => {
     checkType(sheet.data, Type.Sheet);
 
-    const ks = keys(sheet.data, true)
+    const ks = keys(sheet.data)
         .map((k) => Number(k))
         .filter((v) => !isNaN(v));
 
@@ -172,7 +172,7 @@ export const convertToMap = (sheet: Sheet, value: string, ...keys: string[]) => 
                 const result: TObject | TArray = isObject ? {} : [];
                 for (const k of keys) {
                     const v = row[k];
-                    if (isNullOrUndefined(v)) {
+                    if (isNull(v)) {
                         error(`Key '${k}' is not found at row ${row["!index"]}`);
                     }
                     if (isObject) {
@@ -194,7 +194,7 @@ export const convertToMap = (sheet: Sheet, value: string, ...keys: string[]) => 
         let t = result;
         for (let i = 0; i < keys.length; i++) {
             const key = row[keys[i]]?.v as string;
-            if (isNullOrUndefined(key)) {
+            if (isNull(key)) {
                 error(`Key '${keys[i]}' is not found at row ${row["!index"]}`);
             }
             if (i === keys.length - 1) {
@@ -230,7 +230,7 @@ export const convertToFold = (sheet: Sheet, idxKey: string, ...foldKeys: string[
         const result: { [key: string]: TObject } = {};
         for (const row of rows) {
             const idx = row[idxKey]?.v as string;
-            if (isNullOrUndefined(idx)) {
+            if (isNull(idx)) {
                 error(`Key '${idxKey}' is not found at row ${row["!index"]}`);
             }
             let value = result[idx];
@@ -244,7 +244,7 @@ export const convertToFold = (sheet: Sheet, idxKey: string, ...foldKeys: string[
             }
             for (const k of foldKeys) {
                 const v = row[k];
-                if (!isNullOrUndefined(v)) {
+                if (isNotNull(v)) {
                     (value[k] as TArray).push(v);
                 }
             }

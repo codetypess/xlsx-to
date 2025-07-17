@@ -1,6 +1,6 @@
 import xlsx from "xlsx";
 import { type StringifyContext } from "./stringify";
-import { checkType, isNullOrUndefined, keys, toRef, toString, values } from "./util";
+import { checkType, isNull, keys, toRef, toString, values } from "./util";
 
 export const RANGE_CHECKER = "xlsx.checker.range";
 export const INDEX_CHECKER = "xlsx.checker.index";
@@ -31,10 +31,10 @@ export type Tag = {
     ["!comment"]?: string;
     /** writer */
     ["!writer"]?: string[];
-    /** row index */
-    ["!index"]?: number;
     /** field */
     ["!field"]?: Field;
+    /** row index */
+    ["!index"]?: number;
     /** row data */
     ["!row"]?: TObject;
     /** row key */
@@ -204,7 +204,7 @@ export function convertValue(cell: TCell | string, typename: string) {
         if (v === null || v === undefined) {
             error(`Convert value error: '${cell}' => type '${typename}'`);
         }
-        return v as TValue;
+        return v;
     } else {
         if (typename.endsWith("?") && (cell.v === "" || cell.v === null)) {
             cell.s = "null";
@@ -357,6 +357,10 @@ const readCell = (sheetData: xlsx.WorkSheet, r: number, c: number) => {
     return cell;
 };
 
+export const makeCell = (v: TValue, r?: string, s?: string) => {
+    return { v, r, s, "!type": Type.Cell } as TCell;
+};
+
 const readHeader = (path: string, data: xlsx.WorkBook) => {
     const requiredProcessors = Object.values(processors)
         .filter((p) => p.required)
@@ -389,6 +393,7 @@ const readHeader = (path: string, data: xlsx.WorkBook) => {
         };
 
         sheet.data["!type"] = Type.Sheet;
+        sheet.data["!name"] = sheetName;
 
         const str = toString(readCell(sheetData, 0, 0));
         let start = 0;
@@ -685,12 +690,13 @@ export const copyOf = (workbook: Workbook, writer: string, headerOnly: boolean =
  * @throws An error if the workbook is not found.
  */
 export const get = (path: string) => {
-    for (const file in files) {
-        if (file.endsWith(path)) {
-            return files[file];
-        }
+    const found = Object.keys(files).filter((file) => file.endsWith(path));
+    if (found.length === 0) {
+        error(`File not found: ${path}`);
+    } else if (found.length > 1) {
+        error(`Multiple files found: ${path}`);
     }
-    throw new Error(`File not found: ${path}`);
+    return files[found[0]];
 };
 
 export const getRows = <T = TRow>(path: string, sheet: string) => {
@@ -705,7 +711,7 @@ export const getRows = <T = TRow>(path: string, sheet: string) => {
 export const getColumn = (path: string, sheet: string, field: string) => {
     return getRows(path, sheet).map((row) => {
         const cell = row[field];
-        return isNullOrUndefined(cell) ? null : checkType<TCell>(cell, Type.Cell);
+        return isNull(cell) ? null : checkType<TCell>(cell, Type.Cell);
     });
 };
 
@@ -734,7 +740,7 @@ export const createColumnIndexer = <T = TRow>(
             if (sheet.name === sheetName || sheetName === "*") {
                 getColumn(path, sheet.name, field).forEach((cell) => {
                     if (cell && (!filter || filter(cell["!row"] as T))) {
-                        cache.set(cell.v, isNullOrUndefined(cell) ? null : cell);
+                        cache.set(cell.v, isNull(cell) ? null : cell);
                     }
                 });
                 if (cache.has(value)) {
