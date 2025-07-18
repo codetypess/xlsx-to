@@ -202,13 +202,49 @@ xlsx.parse(["data/item.xlsx", "data/task.xlsx"]);
 
 ## 数据验证
 
-内置多种数据检查器：
+### 内置多种数据检查器：
 
 - `size` - 数据大小检查
 - `range` - 数值范围检查
 - `index` - 索引验证
 - `follow` - 依赖关系检查
 - `expr` - 表达式验证
+
+### 检查器
+
+- #skill.id
+  当前列的值必须在当前表的 `skill` 分页中的 `id` 字段中找到
+- battle/battle_skill#skill.id
+  当前列的值必须在 `battle_skill` 表的 `skill` 分页中的 `id` 字段中找到
+- battle/battle_skill#\*.id
+  当前列的值必须在 `battle_skill` 表的任意分页中的 `id` 字段中找到
+- battle/battle_skill#skill.id=id
+  当前列的子字段 `id` 值必须在 `battle_skill` 表的 `skill` 分页中的 `id` 字段中找到
+- value >= 1 && value <= 9
+  表达式检查，示例在 recharge.xlsx 的 discount 字段
+- [1,2,3,4]
+  检查值在不在这个数组内
+- @size(10) 表示字段要是 table 属性，而且长度只能为 10
+  检查 table 字段的长度
+- @follow(field)
+  表示当前单元格有没有值要与目标列一致。
+
+### 高级索引检查器
+
+[[key][&k=1&...]==][file]#\<sheet|\*\>.\<column\>[&f=1&...]
+
+[] 表示可选项，<> 表示必选项
+
+- id==#skill.id
+- id==#\*.id
+- id==battle_skill#skill.id
+- id&key1=TASK_TYPE==task#main.type&branch=3
+
+高级索引检查器由左边（行筛选）、中间（文件表指定）、右边（列筛选）组成，一旦行筛选带 “&” 就表明并不是所有这一列都会参与检查，只有满足所有行筛选项的值才会进行下一步检查。如果列筛选带 “&”，就表明筛选到的值所在行，必须也满足所有列筛选项。
+
+### !@checker
+
+所有检查器前缀带 “!”，就表明，不管当前单元格有没有值，都要执行检查。
 
 ## 输出格式
 

@@ -579,11 +579,17 @@ const parseBody = () => {
         for (const sheetName in workbook.sheets) {
             using _ = doing(`Parsing sheet '${sheetName}' in '${file}'`);
             const sheet = workbook.sheets[sheetName];
-            for (const row of values<TRow>(sheet.data)) {
+            const remap = !["string", "int", "auto"].includes(sheet.fields[0].typename);
+            for (const key of keys(sheet.data)) {
+                const row = sheet.data[key] as TRow;
                 for (const field of sheet.fields) {
                     const cell = row[field.name];
                     checkType(cell, Type.Cell);
                     convertValue(cell, field.typename);
+                }
+                if (remap) {
+                    delete sheet.data[key];
+                    sheet.data[row["!key"]!.v as string] = row;
                 }
             }
         }
@@ -626,6 +632,7 @@ const invokeChecker = (sheet: Sheet, field: Field, errors: string[]) => {
 };
 
 const applyChecker = () => {
+    console.log("applying checker");
     const errors: string[] = [];
     for (const file in files) {
         const workbook = files[file];
@@ -654,6 +661,7 @@ const applyProcessor = () => {
         args: string[];
         name: string;
     };
+    console.log("applying processor");
     for (const file in files) {
         const workbook = files[file];
         const arr: ProcessorEntry[] = [];
@@ -807,6 +815,9 @@ export const createColumnIndexer = <T = TRow>(
                         if (cell && (!filter || filter(cell["!row"] as T))) {
                             rows.push(cell["!row"] as TRow);
                             cache.set(cell.v, isNull(cell) ? null : cell);
+                            if (typeof cell.v === "number") {
+                                cache.set(String(cell.v), isNull(cell) ? null : cell);
+                            }
                         }
                     });
                 }
