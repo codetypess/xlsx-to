@@ -325,6 +325,7 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
     if (str.trim() === "") {
         error(`No checker defined at ${refer}`);
     }
+    const makeFilePath = (path: string) => (path.endsWith(".xlsx") ? path : path + ".xlsx");
     return str
         .split(/[;\n\r]+/)
         .map((s) => s.trim())
@@ -374,7 +375,7 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
                     name: SHEET_CHECKER,
                     force,
                     def: s,
-                    exec: parser(file || path),
+                    exec: parser(makeFilePath(file || path)),
                 };
             } else if (s.includes("#")) {
                 /**
@@ -392,7 +393,7 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
                     name: INDEX_CHECKER,
                     force,
                     def: s,
-                    exec: parser(file || path, sheet, row, column),
+                    exec: parser(makeFilePath(file || path), sheet, row, column),
                 };
             } else if (s !== "x") {
                 /**
@@ -779,147 +780,5 @@ export const getRows = <T = TRow>(path: string, sheet: string) => {
 };
 
 export const getColumn = (path: string, sheet: string, field: string) => {
-    return getRows(path, sheet).map((row) => {
-        const cell = row[field];
-        return isNull(cell) ? null : checkType<TCell>(cell, Type.Cell);
-    });
-};
-
-export type RowFilter = { readonly key: string; readonly value: string | number };
-
-export type ColumnIndexer<T> = {
-    has: (value: unknown) => boolean;
-    get: (value: unknown) => T | null;
-    filter: (cond: readonly RowFilter[]) => T[];
-};
-
-export const createColumnIndexer = <T = TRow>(
-    path: string,
-    sheetName: string,
-    field: string,
-    filter?: (row: T) => boolean
-): ColumnIndexer<T> => {
-    let workbook: Workbook | null = null;
-    const cache: Map<unknown, TCell | null> = new Map();
-    const filterResults: Map<unknown, T[]> = new Map();
-    const rows: TRow[] = [];
-
-    path = path.replace(/\.xlsx$/, "") + ".xlsx";
-
-    const init = () => {
-        if (!workbook) {
-            workbook = get(path);
-            for (const sheet of Object.values(workbook.sheets)) {
-                if (sheet.name === sheetName || sheetName === "*") {
-                    getColumn(path, sheet.name, field).forEach((cell) => {
-                        if (cell && (!filter || filter(cell["!row"] as T))) {
-                            rows.push(cell["!row"] as TRow);
-                            cache.set(cell.v, isNull(cell) ? null : cell);
-                            if (typeof cell.v === "number") {
-                                cache.set(String(cell.v), isNull(cell) ? null : cell);
-                            }
-                        }
-                    });
-                }
-            }
-        }
-    };
-
-    const hasValue = (value: unknown): boolean => {
-        init();
-        return cache.has(value);
-    };
-
-    const getRow = (value: unknown) => {
-        init();
-        return (cache.get(value)?.["!row"] as T | null) ?? null;
-    };
-
-    const filterRows = (cond: readonly RowFilter[]) => {
-        init();
-        let result = filterResults.get(cond);
-        if (!result) {
-            result = [];
-            filterResults.set(cond, result);
-            for (const row of rows) {
-                if (cond.every((c) => row[c.key]?.v === c.value)) {
-                    result.push(row as T);
-                }
-            }
-        }
-        return result;
-    };
-
-    return {
-        has: hasValue,
-        get: getRow,
-        filter: filterRows,
-    };
-};
-
-export interface RowIndexer<T> {
-    has: (value: string | number) => boolean;
-    get: (value: string | number) => T | null;
-    filter: (cond: readonly RowFilter[]) => T[];
-}
-
-export const createRowIndexer = <T = TObject>(
-    path: string,
-    sheetName: string,
-    filter?: (row: T) => boolean
-): RowIndexer<T> => {
-    let workbook: Workbook | null = null;
-    const cache: Record<string | number, T | null> = {};
-    const filterResults: Map<unknown, T[]> = new Map();
-    const rows: TRow[] = [];
-
-    path = path.replace(/\.xlsx$/, "") + ".xlsx";
-
-    const init = () => {
-        if (!workbook) {
-            workbook = get(path);
-            for (const sheet of Object.values(workbook.sheets)) {
-                if (sheet.name === sheetName || sheetName === "*") {
-                    for (const key of keys(sheet.data)) {
-                        const row = checkType<TRow>(sheet.data[key], Type.Row);
-                        if (!filter || filter(row as T)) {
-                            assert(!!row["!key"], "key not found");
-                            cache[key] = row as T;
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    const hasValue = (value: string | number): boolean => {
-        init();
-        return !!cache[value];
-    };
-
-    const getRow = (value: string | number) => {
-        init();
-        return cache[value] ?? null;
-    };
-
-    const filterRows = (cond: readonly RowFilter[]) => {
-        init();
-        let result = filterResults.get(cond);
-        if (!result) {
-            result = [];
-            filterResults.set(cond, result);
-            for (const row of rows) {
-                if (cond.every((c) => row[c.key]?.v === c.value)) {
-                    result.push(row as T);
-                }
-            }
-        }
-        return result;
-    };
-
-    return {
-        has: hasValue,
-        get: getRow,
-        filter: filterRows,
-    };
+    return getRows(path, sheet).map((row) => checkType<TCell>(row[field], Type.Cell));
 };

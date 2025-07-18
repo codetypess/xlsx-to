@@ -1,4 +1,5 @@
-import { assert, CheckerParser, createColumnIndexer, error, get, RowFilter, TCell } from "./xlsx";
+import { ColumnIndexer, RowFilter } from "./indexer";
+import { assert, CheckerParser, error, get, TCell } from "./xlsx";
 
 export const SizeCheckerParser: CheckerParser = (arg) => {
     const length = Number(arg);
@@ -72,18 +73,13 @@ export const IndexCheckerParser: CheckerParser = (file, sheetName, rowQuery, col
 
     assert(!!queryColumn.key, `Invalid key: '${columnQuery}'`);
 
-    const indexer = createColumnIndexer(file, sheetName, queryColumn.key);
+    const indexer = new ColumnIndexer(file, sheetName, queryColumn.key);
 
     const check = (value: unknown) => {
         if (queryColumn.filter.length) {
-            for (const row of indexer.filter(queryColumn.filter)) {
-                if (row[queryColumn.key]?.v === value) {
-                    return true;
-                }
-            }
-            return false;
+            return indexer.has(value as string | number, queryColumn.filter);
         } else {
-            return indexer.has(value);
+            return indexer.has(value as string | number);
         }
     };
 

@@ -38,6 +38,7 @@ import {
 
 export * from "./src/checker";
 export * from "./src/convertor";
+export * from "./src/indexer";
 export * from "./src/processor";
 export * from "./src/stringify";
 export * from "./src/table";
