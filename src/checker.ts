@@ -45,20 +45,23 @@ export const RangeCheckerParser: CheckerParser = (arg) => {
     };
 };
 
-const parseResolver = (str: string) => {
+const parseResolver = (expr: string) => {
     type Collector = (value: TValue, collector: TValue[]) => void;
     const collectors: Collector[] = [];
-    str = str.trim().replaceAll(" ", "");
+    let str = expr.trim().replaceAll(" ", "");
+
     while (str.length) {
-        const match = str.match(/^\.\w+|\[\d+\]|\[\*\]|\[\.\]/);
+        const [match, query, optional] = str.match(/^(\.\w+|\[\d+\]|\[\*\]|\[\.\])([?]?)/) ?? [];
         if (match) {
-            const query = match[0];
-            str = str.slice(query.length);
+            str = str.slice(match.length);
             if (query.startsWith(".")) {
                 const key = query.slice(1);
                 collectors.push((value, arr) => {
                     if (value && typeof value === "object") {
-                        arr.push((value as TObject)[key]);
+                        const v = (value as TObject)[key];
+                        if (v !== undefined || !optional) {
+                            arr.push(v);
+                        }
                     } else {
                         arr.push(null);
                     }
@@ -75,20 +78,27 @@ const parseResolver = (str: string) => {
                 });
             } else if (query === "[.]") {
                 collectors.push((value, arr) => {
-                    arr.push(...keys(value as TObject));
+                    if (value && typeof value === "object") {
+                        arr.push(...keys(value as TObject));
+                    } else {
+                        arr.push(null);
+                    }
                 });
             } else {
                 const index = Number(query.slice(1, -1));
                 collectors.push((value, arr) => {
                     if (Array.isArray(value)) {
-                        arr.push(value[index]);
+                        const v = value[index];
+                        if (v !== undefined || !optional) {
+                            arr.push(v);
+                        }
                     } else {
                         arr.push(null);
                     }
                 });
             }
         } else {
-            throw new Error(`Invalid query: ${str}`);
+            throw new Error(`Invalid query: ${expr}`);
         }
     }
 

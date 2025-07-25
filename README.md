@@ -239,8 +239,8 @@ xlsx.parse(["data/item.xlsx", "data/task.xlsx"]);
 - $.id==#\*.id
 - $.id==battle_skill#skill.id
 - $[.]==battle_skill#skill.id
-- $[*].id==battle_skill#skill.id
-- $[\*][0]==battle_skill#skill.id
+- $.items?[*].id==battle_skill#skill.id
+- $[\*][0]?==battle_skill#skill.id
 - $.id&key2=TASK_TYPE==task#main.type&branch=3
 
 高级索引检查器是行筛选（左边）， 文件指定（中间），列筛选（右边）组成。$ 表示当前单元格的值，“.id" 表示取当前单元格的字段 id 的值，“[.]" 取对象的算有键值，“[*]" 取数组所有项，“[0-9]" 取数组特定项。一旦有行筛选就表明并不是所有这一列都会参与检查，只有满足所有行筛选项的值才会进行下一步检查。如果有列筛选，就表明筛选到的值所在行，必须也满足所有列筛选项。

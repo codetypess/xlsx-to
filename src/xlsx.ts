@@ -99,7 +99,7 @@ type ProcessorType = {
 type ProcessorOption = {
     required: boolean;
     priority: number;
-    stage: "after-read" | "pre-parse" | "pre-check" | "after-check";
+    stage: "after-read" | "pre-parse" | "after-parse" | "pre-check" | "after-check" | "default";
 };
 
 export type Writer = (path: string, data: TObject, processor: string) => void;
@@ -239,7 +239,7 @@ export const registerProcessor = (
         name,
         option: {
             required: option?.required ?? false,
-            stage: option?.stage ?? "after-check",
+            stage: option?.stage ?? "default",
             priority: option?.priority ?? 0,
         },
         exec: processor,
@@ -743,9 +743,11 @@ export const parse = (fs: string[], headerOnly: boolean = false) => {
         applyProcessor("pre-parse");
         resolveChecker();
         parseBody();
+        applyProcessor("after-parse");
         applyProcessor("pre-check");
         applyChecker();
         applyProcessor("after-check");
+        applyProcessor("default");
     }
 };
 
