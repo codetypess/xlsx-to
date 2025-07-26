@@ -44,6 +44,8 @@ export type TCell = {
     r: string;
     /** original string value */
     s: string;
+    /** already converted type */
+    t?: string;
 } & Tag;
 
 export type TValue = boolean | number | string | null | undefined | TObject | TArray | TCell;
@@ -259,8 +261,8 @@ export function convertValue(cell: TCell | string, typename: string) {
         error(`Convertor not found: '${typename}'`);
     }
     if (typeof cell === "string") {
-        const v = convertor.exec(cell);
-        if (v === null || v === undefined) {
+        const v = convertor.exec(cell) ?? null;
+        if (v === null) {
             error(`Convert value error: '${cell}' => type '${typename}'`);
         }
         return v;
@@ -269,22 +271,25 @@ export function convertValue(cell: TCell | string, typename: string) {
             cell.s = "null";
             cell.v = null;
         } else {
-            const v = cell.v;
-            if (v && typeof v === "object" && v["!type"] === typename) {
+            if (cell.t?.replace("?", "") === typename.replace("?", "")) {
                 return cell;
             }
+
+            const v = cell.v;
+            if (typeof v === "object") {
+                error(`cell value is an object: ${JSON.stringify(v)}`);
+            }
+
             cell.s = toString(cell);
+            cell.t = typename;
             try {
-                cell.v = convertor.exec(cell.s);
+                cell.v = convertor.exec(cell.s) ?? null;
             } catch (e) {
                 console.error(e);
                 cell.v = null;
             }
-            if (cell.v === null || cell.v === undefined) {
+            if (cell.v === null) {
                 error(`Convert value error at ${cell.r}: '${v}' => type '${typename}'`);
-            }
-            if (typeof cell.v === "object") {
-                cell.v["!type"] = typename;
             }
         }
         return cell;
@@ -431,12 +436,13 @@ const readCell = (sheetData: xlsx.WorkSheet, r: number, c: number) => {
     const cell: TCell = sheetData[r]?.[c] ?? {};
     cell.v = typeof cell.v === "string" ? cell.v.trim() : (cell.v ?? "");
     cell.r = toRef(c, r);
+    cell.t = undefined;
     cell["!type"] = Type.Cell;
     return cell;
 };
 
-export const makeCell = (v: TValue, r?: string, s?: string) => {
-    return { v, r, s, "!type": Type.Cell } as TCell;
+export const makeCell = (v: TValue, t?: string, r?: string, s?: string) => {
+    return { "!type": Type.Cell, v: v ?? null, t, r, s } as TCell;
 };
 
 const readHeader = (path: string, data: xlsx.WorkBook) => {
