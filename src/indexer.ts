@@ -32,11 +32,15 @@ export class ColumnIndexer<T = TRow> {
             return;
         }
         this._workbook = getWorkbook(this.path);
+        let hasSheet = false;
+        let hasField = false;
         for (const sheet of Object.values(this._workbook.sheets)) {
             if (sheet.name === this.sheetName || this.sheetName === "*") {
+                hasSheet = true;
                 if (!sheet.fields.find((f) => f.name === this.field)) {
                     continue;
                 }
+                hasField = true;
                 for (const key of keys(sheet.data)) {
                     const row = checkType<TRow>(sheet.data[key], Type.Row);
                     const cell = checkType<TCell>(row[this.field], Type.Cell);
@@ -51,6 +55,12 @@ export class ColumnIndexer<T = TRow> {
                     }
                 }
             }
+        }
+        if (!hasSheet) {
+            throw new Error(`Sheet not found: ${this.sheetName}`);
+        }
+        if (!hasField) {
+            throw new Error(`Field not found: ${this.field}`);
         }
     }
 
@@ -107,8 +117,10 @@ export class RowIndexer<T = TRow> {
             return;
         }
         this._workbook = getWorkbook(this.path);
+        let hasSheet = false;
         for (const sheet of Object.values(this._workbook.sheets)) {
             if (sheet.name === this.sheetName || this.sheetName === "*") {
+                hasSheet = true;
                 for (const key of keys(sheet.data)) {
                     const row = checkType<TRow>(sheet.data[key], Type.Row);
                     if (!this.filter || this.filter(row as T)) {
@@ -117,6 +129,9 @@ export class RowIndexer<T = TRow> {
                     }
                 }
             }
+        }
+        if (!hasSheet) {
+            throw new Error(`Sheet not found: ${this.sheetName}`);
         }
     }
 

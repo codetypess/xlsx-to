@@ -646,6 +646,7 @@ const resolveChecker = () => {
                                 `Checker parser not found at ${checker.refer}: '${checker.name}'`
                             );
                         }
+                        assert(!checker.exec, `Checker already parsed: ${checker.refer}`);
                         checker.exec = parser(...checker.args);
                     }
                 }
@@ -839,7 +840,12 @@ export const copyOf = (workbook: Workbook, writer: string, headerOnly: boolean =
 
     for (const sheetName in workbook.sheets) {
         const sheet = workbook.sheets[sheetName];
-        const resultSheet: Sheet = { ...sheet, data: {} };
+        const resultSheet: Sheet = {
+            name: sheet.name,
+            processors: structuredClone(sheet.processors),
+            fields: structuredClone(sheet.fields).filter((f) => f.writers.includes(writer)),
+            data: {},
+        };
         result.sheets[sheetName] = resultSheet;
         if (!headerOnly) {
             resultSheet.data = copy(sheet.data);
@@ -854,9 +860,6 @@ export const copyOf = (workbook: Workbook, writer: string, headerOnly: boolean =
                 }
             }
         }
-        resultSheet.fields = sheet.fields
-            .filter((f) => f.writers.includes(writer))
-            .map((v) => ({ ...v }));
     }
     return result;
 };

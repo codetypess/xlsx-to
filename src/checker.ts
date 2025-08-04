@@ -197,9 +197,9 @@ export const IndexCheckerParser: CheckerParser = (
 };
 
 export const SheetCheckerParser: CheckerParser = (file) => {
+    const path = file.replace(/\.xlsx$/, "") + ".xlsx";
+    const workbook = getWorkbook(path);
     return (cell, row, field, errors) => {
-        const path = file.replace(/\.xlsx$/, "") + ".xlsx";
-        const workbook = getWorkbook(path);
         const sheet = workbook.sheets[cell.v as string];
         return sheet !== undefined;
     };
