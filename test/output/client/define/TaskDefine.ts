@@ -1,3 +1,11 @@
+export type TaskConditionKey =
+    | "building_level"
+    | "mainline_event"
+    | "open_chest"
+    | "receive_chest"
+    | "receive_item"
+    | "role_level";
+
 /**
  * 任务条件
  */
@@ -28,6 +36,12 @@ export enum TaskCondition {
     role_level = "role_level",
 }
 
+export type TaskStateKey =
+    | "NOT_RECEIVED"
+    | "DOING"
+    | "DONE"
+    | "COMPLETE";
+
 /**
  * 任务状态
  */
@@ -49,6 +63,15 @@ export enum TaskState {
      */
     COMPLETE = 4,
 }
+
+export type TaskTypeKey =
+    | "MAIN"
+    | "BRANCH"
+    | "DAILY"
+    | "WEEKLY"
+    | "EVENTS"
+    | "PASSES"
+    | "EXCHANGE";
 
 /**
  * 任务类型

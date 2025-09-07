@@ -370,6 +370,16 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
             const enumName = value["!enum"];
             const enumComment = value["!comment"];
             const ks = keys(value as TObject, isNotNull);
+            enumBuffer.writeString(`export type ${enumName}Key =\n`);
+            enumBuffer.indent();
+            for (let i = 0; i < ks.length; i++) {
+                const k = ks[i];
+                const comma = i === ks.length - 1 ? ";" : "";
+                enumBuffer.writeLine(`| "${k}"${comma}`);
+            }
+            enumBuffer.unindent();
+            enumBuffer.writeLine("");
+
             writeTsComment(enumComment, enumBuffer);
             enumBuffer.writeLine(`export enum ${enumName} {`);
             enumBuffer.indent();

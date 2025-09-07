@@ -1,3 +1,7 @@
+export type BagTypeKey =
+    | "ITEM"
+    | "CHEST";
+
 /**
  * 背包类型
  */
@@ -11,6 +15,12 @@ export enum BagType {
      */
     CHEST = 2,
 }
+
+export type ItemTypeKey =
+    | "CHEST"
+    | "EXP"
+    | "COIN"
+    | "DIAMOND";
 
 /**
  * 物品子类型
@@ -33,6 +43,13 @@ export enum ItemType {
      */
     DIAMOND = 4,
 }
+
+export type QualityTypeKey =
+    | "GREEN"
+    | "BLUE"
+    | "PURPLE"
+    | "ORANGE"
+    | "RED";
 
 export enum QualityType {
     /**
