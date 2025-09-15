@@ -368,7 +368,11 @@ export function convertValue(cell: TCell | string, typename: string) {
     }
 
     if (result === null) {
-        error(`Convert value error: '${cell}' => type '${typename}'`);
+        let r = "";
+        if (typeof cell === "object" && cell.r) {
+            r = `at '${cell.r}'`;
+        }
+        error(`Convert value error: '${v}' -> type '${typename}' ${r}`);
     }
 
     if (typeof cell === "string") {

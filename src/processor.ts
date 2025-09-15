@@ -78,9 +78,7 @@ export const DefineProcessor: Processor = async (
 ) => {
     const data = defineSheet(sheet);
     write(workbook.writer, workbook.path, data, "define");
-    if (action !== "keep_sheet") {
-        delete workbook.sheets[sheet.name];
-    }
+    delete workbook.sheets[sheet.name];
 };
 
 export const ConfigProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
