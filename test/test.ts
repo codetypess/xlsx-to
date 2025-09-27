@@ -38,14 +38,7 @@ xlsx.registerWriter("client", (path, data, processor) => {
                 path: "../define/index",
             };
         });
-        xlsx.writeFile(
-            `${OUTPUT_DIR}/client/types/${name}.ts`,
-            xlsx.outdent(`
-                // AUTO GENERATED, DO NOT MODIFY!
-
-                ${types}
-            `)
-        );
+        xlsx.writeFile(`${OUTPUT_DIR}/client/types/${name}.ts`, types);
     } else {
         throw new Error(`Unknown handler processor: ${processor}`);
     }

@@ -191,7 +191,7 @@ export const stringifyJson = (data: TValue, option?: JsonStringifyOption) => {
 //-----------------------------------------------------------------------------
 // Lua
 //-----------------------------------------------------------------------------
-type LuaStringifyOption = {
+export type LuaStringifyOption = {
     /** default: 4 */
     indent?: number;
     marshal?: string;
@@ -324,7 +324,7 @@ export const stringifyLua = (data: TValue, option?: LuaStringifyOption) => {
 //-----------------------------------------------------------------------------
 // TypeScript
 //-----------------------------------------------------------------------------
-type TsStringifyOption = {
+export type TsStringifyOption = {
     /** default: 4 */
     indent?: number;
     marshal?: string;
@@ -362,6 +362,38 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
         }
     }
 
+    function writeTsEnum(value: TObject) {
+        const enumName = value["!enum"];
+        const enumComment = value["!comment"];
+        const ks = keys(value as TObject, isNotNull);
+        enumBuffer.writeString(`export type ${enumName}Key =\n`);
+        enumBuffer.indent();
+        for (let i = 0; i < ks.length; i++) {
+            const k = ks[i];
+            const comma = i === ks.length - 1 ? ";" : "";
+            enumBuffer.writeLine(`| "${k}"${comma}`);
+        }
+        enumBuffer.unindent();
+        enumBuffer.writeLine("");
+
+        writeTsComment(enumComment, enumBuffer);
+        enumBuffer.writeLine(`export enum ${enumName} {`);
+        enumBuffer.indent();
+        for (const k of ks) {
+            const v = checkType<TCell>((value as TObject)[k], Type.Cell);
+            const valueComment = v["!comment"];
+            writeTsComment(valueComment, enumBuffer);
+            if (typeof v.v === "number") {
+                enumBuffer.writeLine(`${k} = ${v.v},`);
+            } else {
+                enumBuffer.writeLine(`${k} = "${v.v}",`);
+            }
+        }
+        enumBuffer.unindent();
+        enumBuffer.writeLine(`}`);
+        enumBuffer.writeLine("");
+    }
+
     function writeTsValue(value: TValue) {
         if (typeof value === "number") {
             buffer.writeString(numberToString(value, ctx.precision));
@@ -375,37 +407,6 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
             buffer.writeString('"');
         } else if (Array.isArray(value)) {
             writeTsArray(value);
-        } else if (value["!enum"]) {
-            const enumName = value["!enum"];
-            const enumComment = value["!comment"];
-            const ks = keys(value as TObject, isNotNull);
-            enumBuffer.writeString(`export type ${enumName}Key =\n`);
-            enumBuffer.indent();
-            for (let i = 0; i < ks.length; i++) {
-                const k = ks[i];
-                const comma = i === ks.length - 1 ? ";" : "";
-                enumBuffer.writeLine(`| "${k}"${comma}`);
-            }
-            enumBuffer.unindent();
-            enumBuffer.writeLine("");
-
-            writeTsComment(enumComment, enumBuffer);
-            enumBuffer.writeLine(`export enum ${enumName} {`);
-            enumBuffer.indent();
-            for (const k of ks) {
-                const v = checkType<TCell>((value as TObject)[k], Type.Cell);
-                const valueComment = v["!comment"];
-                writeTsComment(valueComment, enumBuffer);
-                if (typeof v.v === "number") {
-                    enumBuffer.writeLine(`${k} = ${v.v},`);
-                } else {
-                    enumBuffer.writeLine(`${k} = "${v.v}",`);
-                }
-            }
-            enumBuffer.unindent();
-            enumBuffer.writeLine(`}`);
-            enumBuffer.writeLine("");
-            buffer.writeString(enumName);
         } else {
             if (value["!type"] === Type.Cell) {
                 value = value.v;
@@ -438,10 +439,15 @@ export const stringifyTs = (data: TValue, option?: TsStringifyOption) => {
         for (let i = 0; i < ks.length; i++) {
             const k = ks[i];
             const v = value[k];
-            stacks.push(k);
-            if (v && typeof v === "object" && v["!comment"]) {
-                writeTsComment(v["!comment"], buffer);
+            if (v && typeof v === "object") {
+                if (v["!enum"]) {
+                    writeTsEnum(v as TObject);
+                    continue;
+                } else if (v["!comment"]) {
+                    writeTsComment(v["!comment"], buffer);
+                }
             }
+            stacks.push(k);
             buffer.padding();
             if (k.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/) || isNumericKey(k)) {
                 buffer.writeString(`${k}:${space}`);

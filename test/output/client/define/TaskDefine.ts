@@ -115,18 +115,6 @@ export const TaskDefine = {
          */
         BEGINNER_LAST_TASK_ID: 1023,
     },
-    /**
-     * 任务条件
-     */
-    TASK_CONDITION: TaskCondition,
-    /**
-     * 任务状态
-     */
-    TASK_STATE: TaskState,
-    /**
-     * 任务类型
-     */
-    TASK_TYPE: TaskType,
     TaskTypeOptions: [
         {
             name: "主线任务(MAIN)",

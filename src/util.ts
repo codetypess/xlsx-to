@@ -1,6 +1,13 @@
 import * as fs from "node:fs";
 import { basename, dirname, extname } from "node:path";
-import { JsonStringifyOption, stringifyJson } from "./stringify";
+import {
+    JsonStringifyOption,
+    LuaStringifyOption,
+    stringifyJson,
+    stringifyLua,
+    stringifyTs,
+    TsStringifyOption,
+} from "./stringify";
 import type { TCell, TObject, TValue } from "./xlsx";
 
 export const isNumericKey = (key: string) => {
@@ -136,11 +143,25 @@ export const writeFile = (path: string, data: string) => {
     }
 };
 
-export const writeJson = (path: string, data: TValue, options?: JsonStringifyOption) => {
+export const writeJson = (path: string, data: unknown, options?: JsonStringifyOption) => {
     options = options ?? {};
     options.indent = options.indent ?? 2;
     options.precision = options.precision ?? 10;
-    writeFile(path, stringifyJson(data, options));
+    writeFile(path, stringifyJson(data as TValue, options));
+};
+
+export const writeLua = (path: string, data: unknown, options?: LuaStringifyOption) => {
+    options = options ?? {};
+    options.indent = options.indent ?? 2;
+    options.precision = options.precision ?? 10;
+    writeFile(path, stringifyLua(data as TValue, options));
+};
+
+export const writeTs = (path: string, data: unknown, options?: TsStringifyOption) => {
+    options = options ?? {};
+    options.indent = options.indent ?? 2;
+    options.precision = options.precision ?? 10;
+    writeFile(path, stringifyTs(data as TValue, options));
 };
 
 export const filename = (path: string, suffix: boolean = false) => {

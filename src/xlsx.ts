@@ -1,3 +1,4 @@
+import { basename } from "path";
 import xlsx from "xlsx";
 import { type StringifyContext } from "./stringify";
 import { keys, values } from "./util";
@@ -966,11 +967,13 @@ export const copyOf = (workbook: Workbook, writer: string, headerOnly: boolean =
  */
 export const getWorkbook = (path: string, writer?: string) => {
     writer ??= currentWriter;
-    const found = Object.keys(workbooks[writer]).filter((file) => file.endsWith(path));
+    const found = Object.keys(workbooks[writer])
+        .filter((file) => file.endsWith(path))
+        .filter((file) => basename(file) === basename(path));
     if (found.length === 0) {
         error(`File not found: ${path}`);
     } else if (found.length > 1) {
-        error(`Multiple files found: ${path}`);
+        error(`Multiple files found: ${found.join(", ")}`);
     }
     return workbooks[writer][found[0]];
 };

@@ -1,6 +1,4 @@
 // AUTO GENERATED, DO NOT MODIFY!
-
-// AUTO GENERATED, DO NOT MODIFY!
 // file: test/res/item.xlsx
 
 import {
