@@ -9,6 +9,11 @@ import {
 } from "./client/define/index";
 
 // file: test/res/item.xlsx
+// processors:
+//  - @define
+//  - @stringify
+//  - @typedef
+//  - @auto-register
 export interface ItemDefine {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -105,6 +110,8 @@ export interface ItemItem {
 }
 
 // file: test/res/item.xlsx
+// processors:
+//  - @map(*, kind, level)
 export interface ItemMap {
     /**
      * 注释 (location: B2) (checker: x) (writer: client|server)
@@ -125,6 +132,8 @@ export interface ItemMap {
 }
 
 // file: test/res/item.xlsx
+// processors:
+//  - @map([name,level], kind, level)
 export interface ItemMapArr {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -149,6 +158,8 @@ export interface ItemMapArr {
 }
 
 // file: test/res/item.xlsx
+// processors:
+//  - @map(.comment, kind, level)
 export interface ItemMapField {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -173,6 +184,8 @@ export interface ItemMapField {
 }
 
 // file: test/res/item.xlsx
+// processors:
+//  - @map({name,level,kind}, kind, level)
 export interface ItemMapObj {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -261,6 +274,8 @@ export interface TaskBranch {
 }
 
 // file: test/res/task.xlsx
+// processors:
+//  - @config
 export interface TaskConf {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -285,6 +300,11 @@ export interface TaskConf {
 }
 
 // file: test/res/task.xlsx
+// processors:
+//  - @define
+//  - @stringify
+//  - @typedef
+//  - @auto-register
 export interface TaskDefine {
     /**
      * ### (location: A2) (checker: x) (writer: client|server)
@@ -431,7 +451,7 @@ export interface TaskMain {
      */
     desc: { v: string };
     /**
-     * 后置任务 (location: F1) (checker: task#*.id) (writer: client|server)
+     * 后置任务 (location: F1) (checker: task#*.id&type=MAIN) (writer: client|server)
      */
     next_task: { v?: number };
     /**

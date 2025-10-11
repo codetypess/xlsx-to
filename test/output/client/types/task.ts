@@ -157,7 +157,7 @@ export interface GeneratedTaskMainRow {
      */
     readonly desc: string;
     /**
-     * 后置任务 (location: F1) (checker: task#*.id)
+     * 后置任务 (location: F1) (checker: task#*.id&type=MAIN)
      */
     readonly next_task?: number;
     /**

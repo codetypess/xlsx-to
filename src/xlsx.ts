@@ -410,7 +410,13 @@ const parseProcessor = (str: string) => {
 
 const makeFilePath = (path: string) => (path.endsWith(".xlsx") ? path : path + ".xlsx");
 
-const parseChecker = (path: string, refer: string, index: number, str: string) => {
+const parseChecker = (
+    rowFile: string,
+    rowSheet: string,
+    refer: string,
+    index: number,
+    str: string
+) => {
     if (str === "x" || (index === 0 && str.startsWith("!!"))) {
         return [];
     }
@@ -465,7 +471,7 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
                     force,
                     def: s,
                     refer,
-                    args: [makeFilePath(file || path)],
+                    args: [makeFilePath(file || rowFile)],
                     exec: null!,
                 };
             } else if (s.includes("#")) {
@@ -479,12 +485,12 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
                     ,
                     rowKey = "",
                     rowFilter = "",
-                    file = "",
-                    sheet = "",
+                    colFile = "",
+                    colSheet = "",
                     colKey = "",
                     colFilter = "",
                 ] = s.match(/^(?:\$([^&]*)?(?:&(.+))?==)?([^#=]*)#([^.]+)\.(\w+)(?:&(.+))?$/) ?? [];
-                if (!sheet || !colKey) {
+                if (!colSheet || !colKey) {
                     error(`Invalid index checker at ${refer}: '${s}'`);
                 }
                 checker = {
@@ -492,7 +498,16 @@ const parseChecker = (path: string, refer: string, index: number, str: string) =
                     force,
                     def: s,
                     refer,
-                    args: [makeFilePath(file || path), sheet, rowKey, rowFilter, colKey, colFilter],
+                    args: [
+                        rowFile,
+                        rowSheet,
+                        rowKey,
+                        rowFilter,
+                        makeFilePath(colFile || rowFile),
+                        colSheet,
+                        colKey,
+                        colFilter,
+                    ],
                     exec: null!,
                 };
             } else if (s !== "x") {
@@ -584,7 +599,7 @@ const readHeader = (path: string, data: xlsx.WorkBook) => {
             continue;
         }
 
-        const parsed: Record<string, string> = {};
+        const parsed: Record<string, boolean> = {};
         for (let c = 0; c < sheetData[start].length; c++) {
             const r = start;
             const name = toString(readCell(sheetData, r + 0, c));
@@ -608,7 +623,7 @@ const readHeader = (path: string, data: xlsx.WorkBook) => {
                 if (parsed[name]) {
                     error(`Duplicate field name: '${name}' at ${toRef(c, r)}`);
                 }
-                parsed[name] = `${sheetName}#${toRef(c, r)}`;
+                parsed[name] = true;
                 sheet.fields.push({
                     path,
                     sheet: sheetName,
@@ -616,7 +631,7 @@ const readHeader = (path: string, data: xlsx.WorkBook) => {
                     name,
                     typename,
                     writers: arr.length ? arr : writerKeys.slice(),
-                    checker: parseChecker(path, parsed[name], c, checker),
+                    checker: parseChecker(path, sheetName, `${toRef(c, r + 3)}`, c, checker),
                     comment,
                     refer: toRef(c, r),
                     ignore: false,
@@ -706,6 +721,7 @@ const resolveChecker = () => {
                                 `Checker parser not found at ${checker.refer}: '${checker.name}'`
                             );
                         }
+                        using __ = doing(`Parsing checker at ${checker.refer}: ${checker.def}`);
                         assert(!checker.exec, `Checker already parsed: ${checker.refer}`);
                         checker.exec = parser(...checker.args);
                     }

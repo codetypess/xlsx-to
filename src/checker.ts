@@ -1,6 +1,6 @@
 import { ColumnIndexer, RowFilter } from "./indexer";
 import { keys } from "./util";
-import { CheckerParser, getWorkbook, TCell, TObject, TValue } from "./xlsx";
+import { CheckerParser, convertValue, error, getWorkbook, TCell, TObject, TValue } from "./xlsx";
 
 export const SizeCheckerParser: CheckerParser = (arg) => {
     const length = Number(arg);
@@ -45,10 +45,10 @@ export const RangeCheckerParser: CheckerParser = (arg) => {
     };
 };
 
-const parseResolver = (expr: string) => {
+const parseResolver = (expr: IndexerFilterExpr) => {
     type Collector = (value: TValue, collector: TValue[]) => void;
     const collectors: Collector[] = [];
-    let str = expr.trim().replaceAll(" ", "");
+    let str = expr.key.trim().replaceAll(" ", "");
 
     while (str.length) {
         const [match, query, optional] = str.match(/^(\.\w+|\[\d+\]|\[\*\]|\[\.\])([?]?)/) ?? [];
@@ -125,46 +125,86 @@ const parseResolver = (expr: string) => {
     };
 };
 
-const parseFilter = (filter: string) => {
-    return filter
+type IndexerFilterExpr = {
+    file: string;
+    sheet: string;
+    key: string;
+    filter: string;
+};
+
+const parseFilter = (expr: IndexerFilterExpr) => {
+    const workbook = getWorkbook(expr.file);
+    const findField = (name: string) => {
+        if (expr.sheet === "*") {
+            for (const sheet of Object.values(workbook.sheets)) {
+                const field = sheet.fields.find((f) => f.name === name);
+                if (field) {
+                    return field;
+                }
+            }
+        } else {
+            const sheet = workbook.sheets[expr.sheet];
+            return sheet.fields.find((f) => f.name === name);
+        }
+    };
+    return expr.filter
         .replaceAll(" ", "")
         .split("&")
         .filter((s) => s.length)
         .map((s) => {
             const [, key, value] = s.match(/(\w+)=(\w+)/) ?? [];
-            const num = Number(value);
             if (key && value) {
-                return { key, value: isNaN(num) ? value : num };
+                const field = findField(key);
+                if (!field) {
+                    error(`Field not found: ${key}`);
+                }
+                const v = convertValue(value, field.typename);
+                return { key, value: v };
             } else {
-                throw new Error(`Invalid filter: ${filter}`);
+                error(`Invalid filter: ${expr.filter}`);
             }
         }) as readonly RowFilter[];
 };
 
-const parseAst = (rowKey: string, colKey: string, rowFilter: string, colFilter: string) => {
+const parseIndexerAst = (rowExpr: IndexerFilterExpr, colExpr: IndexerFilterExpr) => {
     return {
         value: {
-            key: rowKey,
-            resolve: parseResolver(rowKey),
-            filter: parseFilter(rowFilter),
+            key: rowExpr.key,
+            resolve: parseResolver(rowExpr),
+            filter: parseFilter(rowExpr),
         },
         target: {
-            key: colKey,
-            filter: parseFilter(colFilter),
+            key: colExpr.key,
+            filter: parseFilter(colExpr),
         },
     };
 };
 
 export const IndexCheckerParser: CheckerParser = (
-    file,
-    sheet,
+    rowFile,
+    rowSheet,
     rowKey,
     rowFilter,
+    colFile,
+    colSheet,
     colKey,
     colFilter
 ) => {
-    const ast = parseAst(rowKey, colKey, rowFilter, colFilter);
-    const indexer = new ColumnIndexer(file, sheet, ast.target.key);
+    const ast = parseIndexerAst(
+        {
+            file: rowFile,
+            sheet: rowSheet,
+            key: rowKey,
+            filter: rowFilter,
+        },
+        {
+            file: colFile,
+            sheet: colSheet,
+            key: colKey,
+            filter: colFilter,
+        }
+    );
+    const indexer = new ColumnIndexer(colFile, colSheet, ast.target.key);
 
     return (cell, row, field, errors) => {
         if (cell.v === null || cell.v === undefined) {

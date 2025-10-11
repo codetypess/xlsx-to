@@ -48,7 +48,7 @@ export const outdent = (value: string) => {
 
 export const format = (str: string, vars: Record<string, string>) => {
     const lines: string[] = [];
-    for (const line of str.split(/\n|\r\n/)) {
+    for (const line of outdent(str).split(/\n|\r\n/)) {
         if (line.match(/^\s*%{\w+}\s*$/)) {
             const [_, space, key] = line.match(/^(\s*)%{(\w+)}$/)!;
             if (vars[key] !== undefined && vars[key] !== null) {
