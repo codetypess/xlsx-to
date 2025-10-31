@@ -17,10 +17,18 @@ xlsx.registerProcessor(
         done = true;
         xlsx.writeFile(
             "test/output/workbook-typedef.ts",
-            xlsx.genWorkbookTypedef(workbook.context, (typename) => ({
-                type: makeTypename(typename),
-                path: "./client/define/index",
-            }))
+            xlsx.genWorkbookTypedef(workbook.context, (typename) => {
+                if (typename === "TCell") {
+                    return {
+                        type: "TCell as _TCell",
+                        path: "../../",
+                    };
+                }
+                return {
+                    type: makeTypename(typename),
+                    path: "./client/define/index",
+                };
+            })
         );
     },
     {

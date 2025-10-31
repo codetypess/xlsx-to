@@ -121,6 +121,11 @@ export const genWorkbookTypedef = (ctx: Context, resolver: TypeResolver) => {
 
     const typeBuffer = new StringBuffer(4);
     const namedTypes: Record<string, Set<string>> = {};
+
+    const TCellImport = resolver("TCell");
+    namedTypes[TCellImport.path!] ||= new Set();
+    namedTypes[TCellImport.path!].add(TCellImport.type);
+
     for (const workbook of ctx.workbooks) {
         const name = basename(workbook.path);
         for (const sheet of workbook.sheets) {
@@ -161,27 +166,31 @@ export const genWorkbookTypedef = (ctx: Context, resolver: TypeResolver) => {
                         `(writer: ${field.writers.join("|")})`
                 );
                 typeBuffer.writeLine(` */`);
+                typeBuffer.padding();
+                typeBuffer.writeString(`${field.name}: { v${optional}: `);
                 if (typename === "int" || typename === "float" || typename === "auto") {
-                    typeBuffer.writeLine(`${field.name}: { v${optional}: number${array} };`);
+                    typeBuffer.writeString(`number`);
                 } else if (typename === "string") {
-                    typeBuffer.writeLine(`${field.name}: { v${optional}: string${array} };`);
+                    typeBuffer.writeString(`string`);
                 } else if (typename === "bool") {
-                    typeBuffer.writeLine(`${field.name}: { v${optional}: boolean${array} };`);
+                    typeBuffer.writeString(`boolean`);
                 } else if (
                     typename.startsWith("json") ||
                     typename.startsWith("table") ||
                     typename.startsWith("unknown") ||
                     typename.startsWith("@")
                 ) {
-                    typeBuffer.writeLine(`${field.name}: { v${optional}: unknown${array} };`);
+                    typeBuffer.writeString(`unknown`);
                 } else {
                     const ret = resolver(typename);
                     if (ret.path) {
                         namedTypes[ret.path] ||= new Set();
                         namedTypes[ret.path].add(ret.type);
                     }
-                    typeBuffer.writeLine(`${field.name}: { v${optional}: ${ret.type}${array} };`);
+                    typeBuffer.writeString(`${ret.type}`);
                 }
+                typeBuffer.writeString(`${array} } & TCell;`);
+                typeBuffer.linefeed();
             }
             typeBuffer.unindent();
             typeBuffer.writeLine(`}`);
@@ -205,6 +214,8 @@ export const genWorkbookTypedef = (ctx: Context, resolver: TypeResolver) => {
         buffer.writeLine("");
     }
 
+    buffer.writeLine(`type TCell = Omit<_TCell, "v">;`);
+    buffer.writeLine("");
     buffer.writeLine(typeBuffer.toString());
     return buffer.toString();
 };
