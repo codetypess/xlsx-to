@@ -83,15 +83,8 @@ export const DefineProcessor: Processor = async (workbook: Workbook, sheet: Shee
     sheet.ignore = true;
 };
 
-export const ConfigProcessor: Processor = async (
-    workbook: Workbook,
-    sheet: Sheet,
-    name?: string
-) => {
+export const ConfigProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
     const data = configSheet(workbook, sheet);
-    if (name) {
-        data["!name"] = name;
-    }
     sheet.data = data;
     sheet.ignore = true;
 };

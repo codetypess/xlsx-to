@@ -169,14 +169,27 @@ const parseFilter = (ctx: Context, expr: IndexerFilterExpr) => {
         .split("&")
         .filter((s) => s.length)
         .map((s) => {
-            const [, key, value] = s.match(/(\w+)=(\w+)/) ?? [];
+            const [, key, value] = s.match(/(\w+)=(@?\w+)/) ?? [];
             if (key && value) {
                 const field = findField(key);
                 if (!field) {
                     error(`Field not found: ${key}`);
                 }
-                const v = convertValue(value, field.typename);
-                return { key, value: v };
+                let filter: RowFilter | undefined;
+                if (value.startsWith("@")) {
+                    filter = {
+                        key,
+                        value: value.slice(1),
+                        refer: value.slice(1),
+                    };
+                } else {
+                    const v = convertValue(value, field.typename);
+                    filter = {
+                        key,
+                        value: v as string | number,
+                    };
+                }
+                return filter;
             } else {
                 error(`Invalid filter: ${expr.filter}`);
             }
@@ -247,6 +260,20 @@ export const IndexCheckerParser: CheckerParser = (
 
         return ast.value.resolve(cell.v, errors, (value) => {
             if (ast.target.filter.length) {
+                ast.target.filter.forEach((filter) => {
+                    if (filter.refer) {
+                        const refer = row[filter.refer] as TCell | undefined;
+                        if (!refer || refer.v === null || refer.v === undefined) {
+                            errors.push(`not found ${filter.refer} in row`);
+                            return false;
+                        } else if (typeof refer.v !== "string" && typeof refer.v !== "number") {
+                            errors.push(`refer type error: data=${refer.v} type=${typeof refer.v}`);
+                            return false;
+                        } else {
+                            filter.value = refer.v;
+                        }
+                    }
+                });
                 return indexer.has(value, ast.target.filter);
             } else {
                 return indexer.has(value);
@@ -281,5 +308,30 @@ export const SheetCheckerParser: CheckerParser = (
 export const ReferCheckerParser: CheckerParser = (ctx, arg) => {
     return ({ cell, row, field, errors }) => {
         return true;
+    };
+};
+
+export const UniqueCheckerParser: CheckerParser = (ctx, arg) => {
+    let columnIndex: ColumnIndexer | undefined;
+    return ({ cell, row, field, errors, workbook, sheet }) => {
+        if (!columnIndex) {
+            columnIndex = new ColumnIndexer(ctx, workbook.path, sheet.name, field.name);
+        }
+        if (typeof cell.v !== "string" && typeof cell.v !== "number") {
+            errors.push(`data type error: type=${typeof cell.v}`);
+            return false;
+        }
+        const arr = columnIndex.get(cell.v);
+        if (arr.length > 1) {
+            for (const item of arr) {
+                const otherCell = item[field.name] as TCell;
+                if (item[field.name] !== cell) {
+                    errors.push(`unique error: location=${otherCell.r}`);
+                }
+            }
+            return false;
+        } else {
+            return true;
+        }
     };
 };

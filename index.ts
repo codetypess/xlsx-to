@@ -6,6 +6,7 @@ import {
     ReferCheckerParser,
     SheetCheckerParser,
     SizeCheckerParser,
+    UniqueCheckerParser,
 } from "./src/checker";
 import {
     boolConvertor,
@@ -41,21 +42,22 @@ export * from "./src/typedef";
 export * from "./src/util";
 export * from "./src/xlsx";
 
-registerType("bool", boolConvertor);
-registerType("int", intConvertor);
 registerType("auto", intConvertor);
-registerType("string", stringConvertor);
+registerType("bool", boolConvertor);
 registerType("float", floatConvertor);
+registerType("int", intConvertor);
 registerType("json", jsonConvertor);
+registerType("string", stringConvertor);
 registerType("table", tableConvertor);
 
-registerChecker(BuiltinChecker.Size, SizeCheckerParser);
-registerChecker(BuiltinChecker.Refer, ReferCheckerParser);
-registerChecker(BuiltinChecker.Follow, FollowCheckerParser);
 registerChecker(BuiltinChecker.Expr, ExprCheckerParser);
-registerChecker(BuiltinChecker.Range, RangeCheckerParser);
+registerChecker(BuiltinChecker.Follow, FollowCheckerParser);
 registerChecker(BuiltinChecker.Index, IndexCheckerParser);
+registerChecker(BuiltinChecker.Range, RangeCheckerParser);
+registerChecker(BuiltinChecker.Refer, ReferCheckerParser);
 registerChecker(BuiltinChecker.Sheet, SheetCheckerParser);
+registerChecker(BuiltinChecker.Size, SizeCheckerParser);
+registerChecker(BuiltinChecker.Unique, UniqueCheckerParser);
 
 registerProcessor("define", DefineProcessor, { stage: "pre-stringify" });
 registerProcessor("config", ConfigProcessor, { stage: "pre-stringify", priority: 800 });

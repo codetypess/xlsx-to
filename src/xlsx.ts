@@ -175,6 +175,7 @@ export class Context {
 
     add(workbook: Workbook) {
         assert(workbook.context === this, `Context mismatch`);
+        assert(!this._workbooks[workbook.path], `Workbook already added: ${workbook.path}`);
         this._workbooks[workbook.path] = workbook;
     }
 
@@ -213,6 +214,7 @@ export const enum BuiltinChecker {
     Refer = "refer",
     Size = "size",
     Follow = "follow",
+    Unique = "unique",
     Range = "xlsx.checker.range",
     Index = "xlsx.checker.index",
     Expr = "xlsx.checker.expr",
@@ -286,7 +288,7 @@ export const doing = (msg: string) => {
 export function error(msg: string): never {
     let str = "";
     if (doings.length > 0) {
-        str = "\n    doing:\n" + doings.map((v) => `      -> ${v}`).join("\n");
+        str = "\n" + doings.map((v) => `    -> ${v}`).join("\n");
     }
     throw new Error(msg + str);
 }

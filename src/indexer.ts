@@ -15,7 +15,11 @@ const isSame = (a: unknown, b: unknown) => {
     }
 };
 
-export type RowFilter = { readonly key: string; readonly value: string | number };
+export type RowFilter = {
+    key: string;
+    value: string | number;
+    refer?: string;
+};
 
 export class ColumnIndexer<T = TRow> {
     private _workbook: Workbook | null = null;
@@ -95,10 +99,11 @@ export class ColumnIndexer<T = TRow> {
         } else if (typeof cond === "function") {
             return this._rows.filter((v) => cond(v as T)) as T[];
         } else {
-            let result = this._filtered.get(cond);
+            const hash = "filter:" + cond.map((c) => `${c.key}=${c.value}`).join("&");
+            let result = this._filtered.get(hash);
             if (!result) {
                 result = [];
-                this._filtered.set(cond, result);
+                this._filtered.set(hash, result);
                 for (const row of this._rows) {
                     if (cond.every((c) => isSame(row[c.key]?.v, c.value))) {
                         result.push(row as T);
