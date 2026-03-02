@@ -17,9 +17,9 @@ type TCell = Omit<_TCell, "v">;
 // processors:
 //  - @auto-register
 //  - @define
+//  - @gen-type
 //  - @post_stringify
 //  - @stringify
-//  - @typedef
 //  - @validate-json
 //  - @workbook-indexer
 //  - @workbook-typedef
@@ -320,9 +320,9 @@ export interface TaskConfRow {
 // processors:
 //  - @auto-register
 //  - @define
+//  - @gen-type
 //  - @post_stringify
 //  - @stringify(task)
-//  - @typedef
 //  - @validate-json
 //  - @workbook-indexer
 //  - @workbook-typedef

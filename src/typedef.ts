@@ -16,7 +16,7 @@ export class TypeImporter {
         const basic = ret.type.match(/^[a-zA-Z_][a-zA-Z0-9_]+/)?.[0] ?? "";
         if (ret.path && !basicTypes.includes(basic)) {
             this._namedTypes[ret.path] ||= new Set();
-            this._namedTypes[ret.path].add(ret.type);
+            this._namedTypes[ret.path].add(ret.type.replaceAll("[]", ""));
         }
         return ret;
     }
@@ -37,7 +37,7 @@ export class TypeImporter {
     }
 }
 
-export const genTsTypedef = (workbook: Workbook, resolver: TypeResolver) => {
+export const genTsType = (workbook: Workbook, resolver: TypeResolver) => {
     const buffer = new StringBuffer(4);
     buffer.writeLine(`// AUTO GENERATED, DO NOT MODIFY!`);
     buffer.writeLine(`// file: ${workbook.path}`);
@@ -96,7 +96,7 @@ export const genTsTypedef = (workbook: Workbook, resolver: TypeResolver) => {
     return buffer.toString();
 };
 
-export const genLuaTypedef = (workbook: Workbook, resolver: TypeResolver) => {
+export const genLuaType = (workbook: Workbook, resolver: TypeResolver) => {
     const sheets = workbook.sheets.filter((s) => !s.ignore);
     const buffer = new StringBuffer(4);
     for (const sheet of sheets) {
@@ -130,7 +130,7 @@ export const genLuaTypedef = (workbook: Workbook, resolver: TypeResolver) => {
     return buffer.toString();
 };
 
-export const genWorkbookTypedef = (ctx: Context, resolver: TypeResolver) => {
+export const genXlsxType = (ctx: Context, resolver: TypeResolver) => {
     const buffer = new StringBuffer(4);
     buffer.writeLine(`// AUTO GENERATED, DO NOT MODIFY!\n`);
 

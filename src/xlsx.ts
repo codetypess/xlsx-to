@@ -433,7 +433,7 @@ const tokenizeArray = (str: string) => {
     for (let i = 0; i < content.length; i++) {
         const char = content[i];
         if (!quote) {
-            if (char === '"' || char === "'") {
+            if ((char === '"' || char === "'") && depth === 0) {
                 quote = char;
                 current = "";
             } else if (char === "{" || char === "[") {
@@ -732,6 +732,10 @@ const readHeader = (path: string, data: xlsx.WorkBook) => {
         const sheetData = data.Sheets[sheetName];
         if (sheetName.startsWith("#") || !sheetData[0]) {
             continue;
+        }
+
+        if (!sheetName.match(/^[\w_]+$/)) {
+            error(`Invalid sheet name: '${sheetName}', only 'A-Za-z0-9_' are allowed`);
         }
 
         const sheet: Sheet = {
@@ -1101,7 +1105,7 @@ const performChecker = () => {
             }
         }
         if (errors.length > 0) {
-            throw new Error(`tag: ${ctx.tag}\n` + errors.join("\n"));
+            throw new Error(`tag: ${ctx.tag} writer: ${ctx.writer}\n` + errors.join("\n"));
         }
     }
 };

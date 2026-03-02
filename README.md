@@ -178,10 +178,10 @@ xlsx.registerWriter("client", (path, data, processor) => {
             `${OUTPUT_DIR}/client/data/${name}.json`,
             xlsx.stringifyJson(data, { indent: 2 })
         );
-    } else if (processor === "typedef") {
+    } else if (processor === "gen-type") {
         // 生成TypeScript类型定义
         const name = xlsx.filename(path);
-        const types = xlsx.generateTsTypedef(path, "client");
+        const types = xlsx.genTsType(path, "client");
         const content = `// AUTO GENERATED, DO NOT MODIFY!\n\n${types}`;
         xlsx.writeFile(`${OUTPUT_DIR}/client/types/${name}.ts`, content);
     }
@@ -205,10 +205,10 @@ xlsx.registerWriter("server", (path, data, processor) => {
             `${OUTPUT_DIR}/server/data/${name}.lua`,
             xlsx.stringifyLua(data, { indent: 2, marshal })
         );
-    } else if (processor === "typedef") {
+    } else if (processor === "gen-type") {
         // 生成Lua类型定义
         const name = xlsx.filename(path);
-        const types = xlsx.generateLuaTypedef(path, "server");
+        const types = xlsx.genLuaType(path, "server");
         const content = `-- AUTO GENERATED, DO NOT MODIFY!\n\n${types}`;
         xlsx.writeFile(`${OUTPUT_DIR}/server/types/${name}.lua`, content);
     }

@@ -28,8 +28,8 @@ xlsx.registerWriter("client", (workbook, processor, data) => {
             `${OUTPUT_DIR}/client/data/${workbook.name}.json`,
             xlsx.stringifyJson(data, { indent: 2 })
         );
-    } else if (processor === "typedef") {
-        const content = xlsx.genTsTypedef(workbook, (typename) => {
+    } else if (processor === "gen-type") {
+        const content = xlsx.genTsType(workbook, (typename) => {
             return {
                 type: makeTypename(typename),
                 path: "../define/index",
@@ -60,8 +60,8 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
             `${OUTPUT_DIR}/server/data/${workbook.name}.lua`,
             xlsx.stringifyLua(data, { indent: 2, marshal })
         );
-    } else if (processor === "typedef") {
-        const content = xlsx.genLuaTypedef(workbook, (typename) => {
+    } else if (processor === "gen-type") {
+        const content = xlsx.genLuaType(workbook, (typename) => {
             return { type: makeTypename(typename) };
         });
         xlsx.writeFile(

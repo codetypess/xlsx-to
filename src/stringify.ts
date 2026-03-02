@@ -525,7 +525,7 @@ export const stringifyTsType = (data: TValue, option?: TsStringifyOption) => {
 
     const buffer = new StringBuffer(option.indent);
     const ctx: StringifyContext = {
-        format: "typedef",
+        format: "ts",
         indent: option.indent,
         precision: option.precision,
         buffer,

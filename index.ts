@@ -21,12 +21,12 @@ import {
     ColumnProcessor,
     ConfigProcessor,
     DefineProcessor,
+    GenTypeProcessor,
     MapProcessor,
     mergeSheet,
     registerStringify,
     simpleSheet,
     StringifyProcessor,
-    TypedefProcessor,
 } from "./src/processor";
 import { tableConvertor } from "./src/table";
 import { BuiltinChecker, registerChecker, registerProcessor, registerType } from "./src/xlsx";
@@ -69,7 +69,7 @@ registerProcessor("stringify", StringifyProcessor, {
     priority: 900,
     required: true,
 });
-registerProcessor("typedef", TypedefProcessor, {
+registerProcessor("gen-type", GenTypeProcessor, {
     stage: "stringify",
     priority: 999,
     required: true,

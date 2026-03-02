@@ -115,8 +115,8 @@ export const ColumnProcessor: Processor = async (
     sheet.data = columnSheet(workbook, sheet, idxKey, ...foldKeys);
 };
 
-export const TypedefProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
-    write(workbook, "typedef", null!);
+export const GenTypeProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
+    write(workbook, "gen-type", null!);
 };
 
 export const AutoRegisterProcessor: Processor = async (workbook: Workbook) => {

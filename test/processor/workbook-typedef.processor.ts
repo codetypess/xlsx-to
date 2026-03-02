@@ -17,7 +17,7 @@ xlsx.registerProcessor(
         done = true;
         xlsx.writeFile(
             "test/output/workbook-typedef.ts",
-            xlsx.genWorkbookTypedef(workbook.context, (typename) => {
+            xlsx.genXlsxType(workbook.context, (typename) => {
                 if (typename === "TCell") {
                     return {
                         type: "TCell as _TCell",
