@@ -1,20 +1,15 @@
 import * as xlsx from "fastxlsx";
+import { addContext } from "./core/context-store.js";
 import { assert } from "./core/errors.js";
-import {
-    addContext,
-    getRunningContext,
-} from "./core/context-store.js";
-import { makeCell } from "./core/conversion.js";
-import { type Checker, type CheckerContext, type CheckerParser, type Convertor, type Processor, type Writer } from "./core/contracts.js";
-import { DEFAULT_TAG, DEFAULT_WRITER, writers } from "./core/registry.js";
-import { parseBody, parseChecker, readBody, readHeader } from "./core/parser.js";
+import { parseBody, readBody, readHeader } from "./core/parser.js";
 import { copyWorkbook, performChecker, performProcessor, resolveChecker } from "./core/pipeline.js";
-import { type TArray, type TObject, type TValue } from "./core/schema.js";
+import { DEFAULT_TAG, DEFAULT_WRITER, writers } from "./core/registry.js";
+import { type TArray, type TObject } from "./core/schema.js";
 import { Context, Workbook } from "./core/workbook.js";
 
 export * from "./core/context-store.js";
-export * from "./core/conversion.js";
 export * from "./core/contracts.js";
+export * from "./core/conversion.js";
 export * from "./core/errors.js";
 export * from "./core/parser.js";
 export * from "./core/pipeline.js";
