@@ -1,69 +1,25 @@
 import * as xlsx from "fastxlsx";
 import { basename, extname } from "path";
-import { type StringifyContext } from "./stringify.js";
+import { assert, doing, error } from "./core/errors.js";
+import {
+    checkerParsers,
+    convertors,
+    DEFAULT_TAG,
+    DEFAULT_WRITER,
+    options,
+    processors,
+    type ProcessorOption,
+    type ProcessorType,
+    writers,
+} from "./core/registry.js";
+import { checkType, copyTag, ignoreField, toString } from "./core/value.js";
 import { keys, values } from "./util.js";
+import { type Field, type Sheet, type TArray, type TCell, type TObject, type TRow, type TValue, Type } from "./core/schema.js";
 
-export const enum Type {
-    Row = "xlsx.type.row",
-    Cell = "xlsx.type.cell",
-    Object = "xlsx.type.object",
-    Define = "xlsx.type.define",
-    Config = "xlsx.type.config",
-    Map = "xlsx.type.map",
-    Fold = "xlsx.type.fold",
-    Sheet = "xlsx.type.sheet",
-}
-
-export type Tag = {
-    /** data name */
-    ["!name"]?: string;
-    /** type tag */
-    ["!type"]?: string | Type;
-    /** special stringify function */
-    ["!stringify"]?: (self: TValue, ctx: StringifyContext) => void;
-    /** enum name */
-    ["!enum"]?: string;
-    /** comment */
-    ["!comment"]?: string;
-    /** ignore fields when stringify */
-    ["!ignore"]?: { [k: string]: boolean };
-};
-
-export type TCell = {
-    /** converted value */
-    v: TValue;
-    /** location: A1 */
-    r: string;
-    /** original string value */
-    s: string;
-    /** already converted type */
-    t?: string;
-} & Tag;
-
-export type TValue = boolean | number | string | null | undefined | TObject | TArray | TCell;
-export type TObject = { [k: string | number]: TValue } & Tag;
-export type TArray = TValue[] & Tag;
-export type TRow = { [k: string]: TCell } & Tag;
-
-export type Field = {
-    readonly index: number;
-    readonly name: string;
-    readonly typename: string;
-    readonly writers: string[];
-    readonly checkers: CheckerType[];
-    readonly comment: string;
-    readonly location: string;
-    realtype?: string;
-    ignore: boolean;
-};
-
-export type Sheet = {
-    readonly name: string;
-    readonly processors: { name: string; args: string[] }[];
-    readonly fields: Field[];
-    ignore: boolean;
-    data: TObject;
-};
+export * from "./core/errors.js";
+export * from "./core/registry.js";
+export * from "./core/schema.js";
+export * from "./core/value.js";
 
 export class Workbook {
     readonly path: string;
@@ -234,129 +190,12 @@ type CheckerType = {
 };
 
 export type Processor = (workbook: Workbook, sheet: Sheet, ...args: string[]) => Promise<void>;
-type ProcessorType = {
-    readonly name: string;
-    readonly option: ProcessorOption;
-    readonly exec: Processor;
-};
-type ProcessorOption = {
-    /** Automatically added to every workbook. */
-    readonly required: boolean;
-    /** The priority of the processor, higher value means lower priority */
-    readonly priority: number;
-    readonly stage:
-        | "after-read"
-        | "pre-parse"
-        | "after-parse"
-        | "pre-check"
-        | "after-check"
-        | "pre-stringify"
-        | "stringify"
-        | "after-stringify";
-};
-
 export type Writer = (workbook: Workbook, processor: string, data: TObject | TArray) => void;
-
-export const options = {
-    suppressCheckers: [] as string[],
-    suppressProcessors: [] as string[],
-    suppressWriters: [] as string[],
-};
-
-export const DEFAULT_WRITER = "__xlsx_default_writer__";
-export const DEFAULT_TAG = "__xlsx_default_tag__";
-export const checkerParsers: Record<string, CheckerParser> = {};
-export const convertors: Record<string, Convertor> = {};
-export const processors: Record<string, ProcessorType> = {};
-export const writers: Record<string, Writer> = {};
 
 const MAX_ERRORS = 50;
 const MAX_HEADERS = 6;
 const contexts: Context[] = [];
-const doings: string[] = [];
 let runningContext: Context | undefined;
-
-export const doing = (msg: string) => {
-    doings.push(msg);
-    return new (class {
-        [Symbol.dispose]() {
-            doings.pop();
-        }
-    })();
-};
-
-export function error(msg: string): never {
-    let str = "";
-    if (doings.length > 0) {
-        str = "\n" + doings.map((v) => `    -> ${v}`).join("\n");
-    }
-    throw new Error(msg + str);
-}
-
-export function assert(condition: unknown, msg: string): asserts condition {
-    if (!condition) {
-        error(msg);
-    }
-}
-
-export const copyTag = (src: object & Tag, dest: object & Tag) => {
-    Object.keys(src)
-        .filter((k) => k.startsWith("!"))
-        .forEach((k) => ((dest as TObject)[k] = (src as TObject)[k]));
-};
-
-export const typeOf = (value: TValue) => {
-    if (value && typeof value === "object" && value["!type"]) {
-        return value["!type"];
-    }
-    return typeof value;
-};
-
-export const checkType = <T>(value: TValue, type: Type | string) => {
-    const t = typeOf(value);
-    if (t === type) {
-        return value as T;
-    }
-    console.error(`checking value: `, value);
-    throw new Error(`Expect type '${type}', but got '${t}'`);
-};
-
-export const isNull = (value: TValue): value is null | undefined => {
-    if (value === null || value === undefined) {
-        return true;
-    }
-    if (typeof value === "object" && value["!type"] === Type.Cell) {
-        const cell = value as unknown as TCell;
-        if (cell.v === null || cell.v === undefined) {
-            return true;
-        }
-    }
-    return false;
-};
-
-export const isNotNull = (value: TValue): value is Exclude<TValue, null | undefined> => {
-    return !isNull(value);
-};
-
-export const ignoreField = (obj: object & Tag, field: string, ignored: boolean) => {
-    obj["!ignore"] ??= {};
-    obj["!ignore"][field] = ignored;
-};
-
-/**
- * Convert a cell to a string.
- * @param cell - The cell to convert.
- * @returns The string value of the cell, or empty string if the cell.v is null or undefined.
- */
-export const toString = (cell?: TCell) => {
-    if (isNull(cell)) {
-        return "";
-    }
-    if (typeof cell.v === "string") {
-        return cell.v.trim();
-    }
-    return String(cell.v);
-};
 
 const toLocation = (col: number, row: number) => {
     const COLUMN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -373,52 +212,6 @@ const toLocation = (col: number, row: number) => {
     return `${ret}${row}`;
 };
 
-export function registerType(typename: string, convertor: Convertor): void {
-    assert(typeof convertor === "function", `Convertor must be a function: '${typename}'`);
-    if (convertors[typename]) {
-        console.warn(`Overwrite previous registered convertor '${typename}'`);
-    }
-    convertors[typename] = convertor;
-}
-
-export const registerChecker = (name: string, parser: CheckerParser) => {
-    if (checkerParsers[name]) {
-        console.warn(`Overwrite previous registered checker parser '${name}'`);
-    }
-    checkerParsers[name] = parser;
-};
-
-/**
- * Register a processor.
- * @param name - The name of the processor.
- * @param processor - The processor function.
- * @param option - The options of the processor.
- */
-export const registerProcessor = (
-    name: string,
-    processor: Processor,
-    option?: Partial<ProcessorOption>
-) => {
-    if (processors[name]) {
-        console.warn(`Overwrite previous registered processor '${name}'`);
-    }
-    processors[name] = {
-        name,
-        option: {
-            required: option?.required ?? false,
-            stage: option?.stage ?? "stringify",
-            priority: option?.priority ?? 0,
-        },
-        exec: processor,
-    };
-};
-
-export const registerWriter = (name: string, writer: Writer) => {
-    if (writers[name]) {
-        console.warn(`Overwrite previous registered writer '${name}'`);
-    }
-    writers[name] = writer;
-};
 
 const tokenizeArray = (str: string) => {
     str = str.trim();
