@@ -1,9 +1,19 @@
 import * as xlsx from "fastxlsx";
-import { basename, extname } from "path";
+import { basename } from "path";
+import { BuiltinChecker, type Checker, type CheckerContext, type CheckerParser, type Convertor, type Processor, type Writer } from "./core/contracts.js";
 import { assert, doing, error } from "./core/errors.js";
 import {
+    addContext,
+    clearRunningContext,
+    getContext,
+    getContexts,
+    getRunningContext,
+    removeContext,
+    setRunningContext,
+} from "./core/context-store.js";
+import { convertValue, makeCell } from "./core/conversion.js";
+import {
     checkerParsers,
-    convertors,
     DEFAULT_TAG,
     DEFAULT_WRITER,
     options,
@@ -15,170 +25,16 @@ import {
 import { checkType, copyTag, ignoreField, toString } from "./core/value.js";
 import { keys, values } from "./util.js";
 import { type Field, type Sheet, type TArray, type TCell, type TObject, type TRow, type TValue, Type } from "./core/schema.js";
+import { Context, Workbook } from "./core/workbook.js";
 
+export * from "./core/context-store.js";
+export * from "./core/conversion.js";
+export * from "./core/contracts.js";
 export * from "./core/errors.js";
 export * from "./core/registry.js";
 export * from "./core/schema.js";
 export * from "./core/value.js";
-
-export class Workbook {
-    readonly path: string;
-    readonly name: string;
-    readonly context: Context;
-
-    private readonly _sheets: Record<string, Sheet>;
-
-    constructor(context: Context, path: string) {
-        this.path = path;
-        this.name = basename(path, extname(path));
-        this._sheets = {};
-        this.context = context;
-    }
-
-    get sheets(): readonly Sheet[] {
-        return Object.values(this._sheets).sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    add(sheet: Sheet) {
-        this._sheets[sheet.name] = sheet;
-    }
-
-    remove(name: string) {
-        delete this._sheets[name];
-    }
-
-    has(name: string) {
-        return !!this._sheets[name];
-    }
-
-    get(name: string) {
-        if (!this._sheets[name]) {
-            throw new Error(`Sheet not found: ${name}`);
-        }
-        return this._sheets[name];
-    }
-
-    clone(ctx: Context) {
-        const newWorkbook = new Workbook(ctx, this.path);
-
-        const includeWriters = (writers: string[]) => {
-            if (ctx.writer === DEFAULT_WRITER || writers.length === 0) {
-                return true;
-            } else {
-                return writers.includes(ctx.writer);
-            }
-        };
-
-        const deepCopy = <T extends TValue>(value: T): T => {
-            if (value && typeof value === "object") {
-                const obj: TObject = (Array.isArray(value) ? [] : {}) as TObject;
-                for (const k in value) {
-                    let v = (value as TObject)[k];
-                    if (!k.startsWith("!")) {
-                        v = deepCopy(v);
-                    }
-                    obj[k] = v;
-                }
-                return obj as T;
-            } else {
-                return value;
-            }
-        };
-
-        for (const sheet of this.sheets) {
-            if (includeWriters(sheet.fields[0].writers)) {
-                const newSheet: Sheet = {
-                    name: sheet.name,
-                    ignore: sheet.ignore,
-                    processors: structuredClone(sheet.processors),
-                    fields: structuredClone(sheet.fields).filter((f) => includeWriters(f.writers)),
-                    data: {},
-                };
-                copyTag(sheet.data, newSheet.data);
-                newWorkbook.add(newSheet);
-                for (const key of keys(sheet.data)) {
-                    const row = sheet.data[key] as TRow;
-                    const newRow: TRow = {};
-                    copyTag(row, newRow);
-                    newSheet.data[key] = newRow;
-                    for (const field of newSheet.fields) {
-                        newRow[field.name] = deepCopy(row[field.name]);
-                    }
-                }
-            }
-        }
-
-        return newWorkbook;
-    }
-}
-
-export class Context {
-    readonly writer: string;
-    readonly tag: string;
-
-    private readonly _workbooks: Record<string, Workbook> = {};
-
-    constructor(writer: string, tag: string) {
-        this.writer = writer;
-        this.tag = tag;
-    }
-
-    get workbooks(): readonly Workbook[] {
-        return Object.values(this._workbooks).sort((a, b) =>
-            a.path.localeCompare(b.path)
-        ) as readonly Workbook[];
-    }
-
-    add(workbook: Workbook) {
-        assert(workbook.context === this, `Context mismatch`);
-        assert(!this._workbooks[workbook.path], `Workbook already added: ${workbook.path}`);
-        this._workbooks[workbook.path] = workbook;
-    }
-
-    remove(path: string): void;
-    remove(workbook: Workbook): void;
-    remove(pathOrWorkbook: Workbook | string) {
-        if (typeof pathOrWorkbook === "string") {
-            delete this._workbooks[pathOrWorkbook];
-        } else {
-            delete this._workbooks[pathOrWorkbook.path];
-        }
-    }
-
-    get(path: string) {
-        const found = Object.keys(this._workbooks)
-            .filter((file) => file.endsWith(path))
-            .filter((file) => basename(file) === basename(path));
-        if (found.length === 0) {
-            error(`File not found: ${path}`);
-        } else if (found.length > 1) {
-            error(`Multiple files found: ${found.join(", ")}`);
-        }
-        return this._workbooks[found[0]];
-    }
-}
-
-export type CheckerContext = {
-    workbook: Workbook;
-    sheet: Sheet;
-    cell: TCell;
-    row: TRow;
-    field: Field;
-    errors: string[];
-};
-export const enum BuiltinChecker {
-    Refer = "refer",
-    Size = "size",
-    Follow = "follow",
-    Unique = "unique",
-    Range = "xlsx.checker.range",
-    Index = "xlsx.checker.index",
-    Expr = "xlsx.checker.expr",
-    Sheet = "xlsx.checker.sheet",
-}
-export type Convertor = (str: string) => TValue;
-export type Checker = (ctx: CheckerContext) => boolean;
-export type CheckerParser = (ctx: Context, ...args: string[]) => Checker;
+export * from "./core/workbook.js";
 type CheckerType = {
     readonly name: string;
     readonly force: boolean;
@@ -189,13 +45,8 @@ type CheckerType = {
     exec: Checker;
 };
 
-export type Processor = (workbook: Workbook, sheet: Sheet, ...args: string[]) => Promise<void>;
-export type Writer = (workbook: Workbook, processor: string, data: TObject | TArray) => void;
-
 const MAX_ERRORS = 50;
 const MAX_HEADERS = 6;
-const contexts: Context[] = [];
-let runningContext: Context | undefined;
 
 const toLocation = (col: number, row: number) => {
     const COLUMN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -211,128 +62,6 @@ const toLocation = (col: number, row: number) => {
     }
     return `${ret}${row}`;
 };
-
-
-const tokenizeArray = (str: string) => {
-    str = str.trim();
-    if (!str.startsWith("[") || !str.endsWith("]")) {
-        error(`Invalid array string: '${str}'`);
-    }
-
-    const tokens: string[] = [];
-    let current = "";
-    let quote = "";
-    let depth = 0;
-    const content = str.slice(1, -1);
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        if (!quote) {
-            if ((char === '"' || char === "'") && depth === 0) {
-                quote = char;
-                current = "";
-            } else if (char === "{" || char === "[") {
-                depth++;
-                current += char;
-            } else if (char === "}" || char === "]") {
-                depth--;
-                current += char;
-            } else if (char === "," && depth === 0) {
-                current = current.trim();
-                if (current) {
-                    tokens.push(current);
-                    current = "";
-                }
-            } else {
-                current += char;
-            }
-        } else {
-            if (char === quote && content[i - 1] !== "\\") {
-                quote = "";
-            } else {
-                current += char;
-            }
-        }
-    }
-
-    current = current.trim();
-    if (current) {
-        tokens.push(current);
-    }
-
-    return tokens;
-};
-
-const convertArray = (str: string, typename: string) => {
-    const len = Number(typename.match(/\[(\d+)\]/)?.[1]);
-    const itemType = typename.replace(/\[\d*\]/, "");
-    const tokens = tokenizeArray(str);
-    const result = tokens.map((s) => convertValue(s, itemType));
-    if (!isNaN(len) && result.length !== len) {
-        error(`Array length mismatch: required ${len}, but got ${result.length}`);
-    }
-    return result;
-};
-
-export function convertValue(cell: TCell, typename: string): TCell;
-export function convertValue(value: string, typename: string): TValue;
-export function convertValue(cell: TCell | string, typename: string) {
-    const convertor = convertors[typename.match(/^\w+/)?.[0] ?? ""];
-    if (!convertor) {
-        error(`Convertor not found: '${typename}'`);
-    }
-
-    const rawtypename = typename.replace("?", "");
-    let v = typeof cell === "string" ? cell : cell.v;
-
-    if (typeof cell !== "string" && cell.t?.replace("?", "") === rawtypename) {
-        return cell;
-    }
-
-    if (typename.includes("?") && (v === "" || v === null)) {
-        if (typeof cell === "string") {
-            return null;
-        } else {
-            cell.s = "null";
-            cell.v = null;
-            return cell;
-        }
-    }
-
-    if (typeof v === "object") {
-        error(`cell value is an object: ${JSON.stringify(v)}`);
-    }
-
-    v = String(v).trim();
-
-    let result: TValue = null;
-
-    try {
-        if (typename.includes("[")) {
-            result = convertArray(v, rawtypename);
-        } else {
-            result = convertor(v) ?? null;
-        }
-    } catch (e) {
-        console.error(e);
-    }
-
-    if (result === null) {
-        let r = "";
-        if (typeof cell === "object" && cell.r) {
-            r = `at '${cell.r}'`;
-        }
-        error(`Convert value error: '${v}' -> type '${typename}' ${r}`);
-    }
-
-    if (typeof cell === "string") {
-        return result;
-    } else {
-        cell.s = v;
-        cell.v = result;
-        cell.t = typename;
-        return cell;
-    }
-}
 
 const parseProcessor = (str: string) => {
     return str
@@ -501,10 +230,6 @@ const readCell = (sheet: xlsx.Sheet, r: number, c: number) => {
     };
     cell["!type"] = Type.Cell;
     return cell;
-};
-
-export const makeCell = (v: TValue, t?: string, r?: string, s?: string) => {
-    return { "!type": Type.Cell, v: v ?? null, t, r, s } as TCell;
 };
 
 const readHeader = (path: string, data: xlsx.Workbook) => {
@@ -701,7 +426,7 @@ const readBody = (path: string, data: xlsx.Workbook) => {
 
 const resolveChecker = () => {
     const writerKeys = Object.keys(writers);
-    for (const ctx of contexts) {
+    for (const ctx of getContexts()) {
         if (!writerKeys.includes(ctx.writer)) {
             continue;
         }
@@ -759,7 +484,7 @@ const parseBody = () => {
 };
 
 const copyWorkbook = () => {
-    for (const ctx of contexts.slice()) {
+    for (const ctx of getContexts().slice()) {
         for (const writer in writers) {
             if (options.suppressWriters.includes(writer)) {
                 continue;
@@ -880,7 +605,7 @@ const invokeChecker = (workbook: Workbook, sheet: Sheet, field: Field, errors: s
 
 const performChecker = () => {
     const writerKeys = Object.keys(writers);
-    for (const ctx of contexts) {
+    for (const ctx of getContexts()) {
         if (!writerKeys.includes(ctx.writer)) {
             continue;
         }
@@ -913,11 +638,11 @@ const performProcessor = async (stage: ProcessorOption["stage"], writer?: string
         name: string;
     };
     const writerKeys = writer ? [writer] : Object.keys(writers);
-    for (const ctx of contexts.slice()) {
+    for (const ctx of getContexts().slice()) {
         if (!writerKeys.includes(ctx.writer)) {
             continue;
         }
-        runningContext = ctx;
+        setRunningContext(ctx);
         console.log(`performing processor: stage=${stage} writer=${ctx.writer} tag=${ctx.tag}`);
         for (const workbook of ctx.workbooks) {
             const arr: ProcessorEntry[] = [];
@@ -950,7 +675,7 @@ const performProcessor = async (stage: ProcessorOption["stage"], writer?: string
                 }
             }
         }
-        runningContext = undefined;
+        clearRunningContext();
     }
 };
 
@@ -987,34 +712,4 @@ export const write = (workbook: Workbook, processor: string, data: object) => {
     const writer = workbook.context.writer;
     assert(!!writers[writer], `Writer not found: ${writer}`);
     writers[writer](workbook, processor, data as TObject | TArray);
-};
-
-export const getRunningContext = () => {
-    if (!runningContext) {
-        throw new Error(`No running context`);
-    }
-    return runningContext;
-};
-
-export const getContexts = (): readonly Context[] => {
-    return contexts;
-};
-
-export const getContext = (writer: string, tag: string) => {
-    return contexts.find((c) => c.writer === writer && c.tag === tag);
-};
-
-export const addContext = (context: Context) => {
-    if (getContext(context.writer, context.tag)) {
-        throw new Error(`Context already exists: writer=${context.writer}, tag=${context.tag}`);
-    }
-    contexts.push(context);
-    return context;
-};
-
-export const removeContext = (context: Context) => {
-    const index = contexts.indexOf(context);
-    if (index !== -1) {
-        contexts.splice(index, 1);
-    }
 };

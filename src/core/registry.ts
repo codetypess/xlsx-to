@@ -1,5 +1,5 @@
 import { assert } from "./errors.js";
-import type { CheckerParser, Convertor, Processor, Writer } from "../xlsx.js";
+import type { CheckerParser, Convertor, Processor, Writer } from "./contracts.js";
 
 export type ProcessorStage =
     | "after-read"
