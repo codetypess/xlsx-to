@@ -1,11 +1,11 @@
 import * as xlsx from "fastxlsx";
 import { addContext } from "./core/context.js";
-import { parseBody, readBody, readHeader } from "./core/parser.js";
+import { convertBody, loadBody, loadHeader } from "./core/parser.js";
 import { copyWorkbook, performChecker, performProcessor, resolveChecker } from "./core/pipeline.js";
 import { DEFAULT_TAG, DEFAULT_WRITER } from "./core/registry.js";
 import { Context, Workbook } from "./core/workbook.js";
 
-export const parse = async (fs: string[], headerOnly: boolean = false) => {
+export const build = async (fs: string[], headerOnly: boolean = false) => {
     const ctx = addContext(new Context(DEFAULT_WRITER, DEFAULT_TAG));
     for (const file of fs) {
         ctx.add(new Workbook(ctx, file));
@@ -13,15 +13,15 @@ export const parse = async (fs: string[], headerOnly: boolean = false) => {
     for (const file of fs) {
         console.log(`reading: '${file}'`);
         const data = await xlsx.Workbook.open(file);
-        readHeader(file, data);
+        loadHeader(file, data);
         if (!headerOnly) {
-            readBody(file, data);
+            loadBody(file, data);
         }
     }
     await performProcessor("after-read", DEFAULT_WRITER);
     if (!headerOnly) {
         await performProcessor("pre-parse", DEFAULT_WRITER);
-        parseBody();
+        convertBody();
         await performProcessor("after-parse", DEFAULT_WRITER);
         copyWorkbook();
         await performProcessor("pre-check");

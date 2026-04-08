@@ -1,4 +1,4 @@
-import type { CheckerParser, Convertor, Processor, Writer } from "./contracts.js";
+import type { CheckerParser, Converter, Processor, Writer } from "./contracts.js";
 import { assert } from "./errors.js";
 
 export type ProcessorStage =
@@ -34,16 +34,16 @@ export const settings = {
 export const DEFAULT_WRITER = "__xlsx_default_writer__";
 export const DEFAULT_TAG = "__xlsx_default_tag__";
 export const checkerParsers: Record<string, CheckerParser> = {};
-export const convertors: Record<string, Convertor> = {};
+export const converters: Record<string, Converter> = {};
 export const processors: Record<string, ProcessorType> = {};
 export const writers: Record<string, Writer> = {};
 
-export function registerType(typename: string, convertor: Convertor): void {
-    assert(typeof convertor === "function", `Convertor must be a function: '${typename}'`);
-    if (convertors[typename]) {
-        console.warn(`Overwrite previous registered convertor '${typename}'`);
+export function registerType(typename: string, converter: Converter): void {
+    assert(typeof converter === "function", `Converter must be a function: '${typename}'`);
+    if (converters[typename]) {
+        console.warn(`Overwrite previous registered converter '${typename}'`);
     }
-    convertors[typename] = convertor;
+    converters[typename] = converter;
 }
 
 export const registerChecker = (name: string, parser: CheckerParser) => {

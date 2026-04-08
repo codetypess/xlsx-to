@@ -1,6 +1,6 @@
 import { Processor } from "../core/contracts.js";
-import { assert, doing } from "../core/errors.js";
-import { convertors, registerChecker, registerType } from "../core/registry.js";
+import { assert, trace } from "../core/errors.js";
+import { converters, registerChecker, registerType } from "../core/registry.js";
 import { type Sheet, type TObject, type TRow, type TValue } from "../core/schema.js";
 import { Workbook } from "../core/workbook.js";
 import { write } from "../io.js";
@@ -8,28 +8,27 @@ import {
     collapseSheet,
     columnSheet,
     configSheet,
-    decltype,
     defineSheet,
     mapSheet,
+    resolveDefineType,
     typedefSheet,
 } from "../transforms/sheet.js";
 import {
     getTypedefWorkbook,
-    registerTypedefConvertors,
+    registerTypedefConverters,
     registerTypedefWorkbook,
 } from "../typedef.js";
 import { keys, values } from "../util.js";
 
 export type StringifyRule = (workbook: Workbook) => object;
-const rules: Record<string, StringifyRule> = {};
-const NONE = {};
+const stringifyRules: Record<string, StringifyRule> = {};
 
-export const registerStringify = (name: string, rule: StringifyRule) => {
-    assert(!rules[name], `Stringify rule '${name}' already registered`);
-    rules[name] = rule;
+export const registerStringifyRule = (name: string, rule: StringifyRule) => {
+    assert(!stringifyRules[name], `Stringify rule '${name}' already registered`);
+    stringifyRules[name] = rule;
 };
 
-export const mergeSheet = (workbook: Workbook, sheetNames?: string[]) => {
+export const mergeSheets = (workbook: Workbook, sheetNames?: string[]) => {
     const result: TObject = {};
     for (const sheet of workbook.sheets) {
         if (!sheetNames || sheetNames.includes(sheet.name)) {
@@ -45,7 +44,7 @@ export const mergeSheet = (workbook: Workbook, sheetNames?: string[]) => {
     return result;
 };
 
-export const simpleSheet = (workbook: Workbook, sheetNames?: string[]) => {
+export const simpleSheets = (workbook: Workbook, sheetNames?: string[]) => {
     const result: TObject = {};
     for (const sheet of workbook.sheets) {
         if (!sheetNames || sheetNames.includes(sheet.name)) {
@@ -55,23 +54,17 @@ export const simpleSheet = (workbook: Workbook, sheetNames?: string[]) => {
     return result;
 };
 
-export const noneSheet = () => {
-    return NONE;
-};
-
 export const StringifyProcessor: Processor = async (
     workbook: Workbook,
     sheet: Sheet,
     ruleName?: string
 ) => {
-    const rule = rules[ruleName ?? "simple"];
+    const rule = stringifyRules[ruleName ?? "simple"];
     if (!rule) {
         throw new Error(`Stringify rule not found: ${ruleName}`);
     }
     const data = rule(workbook);
-    if (data !== NONE) {
-        write(workbook, "stringify", data);
-    }
+    write(workbook, "stringify", data);
 };
 
 export const DefineProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
@@ -120,7 +113,7 @@ export const GenTypeProcessor: Processor = async (workbook: Workbook, sheet: She
 export const TypedefProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
     const typedefWorkbook = typedefSheet(workbook, sheet);
     registerTypedefWorkbook(typedefWorkbook);
-    registerTypedefConvertors(typedefWorkbook);
+    registerTypedefConverters(typedefWorkbook);
     if (!sheet.processors.some((processor) => processor.name === "typedef-write")) {
         sheet.processors.push({
             name: "typedef-write",
@@ -151,10 +144,10 @@ export const AutoRegisterProcessor: Processor = async (workbook: Workbook) => {
             const value = row["value"]?.v as string;
             const value_type = row["value_type"]?.v as string;
             if (enumName && key1 && key2 && value !== undefined && value_type) {
-                using _ = doing(
+                using _ = trace(
                     `Registering type '${enumName}' in '${workbook.path}#${sheet.name}'`
                 );
-                const typeKeys: Record<string, TValue> = decltype(
+                const typeKeys: Record<string, TValue> = resolveDefineType(
                     workbook,
                     workbook.path,
                     sheet.name,
@@ -168,7 +161,7 @@ export const AutoRegisterProcessor: Processor = async (workbook: Workbook) => {
                     {} as Record<string, string>
                 );
 
-                if (!convertors[enumName]) {
+                if (!converters[enumName]) {
                     registerType(enumName, (str) => typeKeys[str]);
                     registerChecker(enumName, () => {
                         return ({ cell }) => typeValues[cell.v as string] !== undefined;

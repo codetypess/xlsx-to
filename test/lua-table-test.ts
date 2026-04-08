@@ -1,8 +1,8 @@
-import { tableConvertor } from "../src/core/table.js";
+import { tableConverter } from "../src/core/table.js";
 
 const tryParse = (str: string) => {
     try {
-        return tableConvertor(str);
+        return tableConverter(str);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         console.error(e.message);

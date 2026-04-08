@@ -84,8 +84,8 @@ export const runTypedefRegressionTests = async () => {
 
     xlsx.registerTypedefWorkbook(sharedWorkbook);
     xlsx.registerTypedefWorkbook(consumerWorkbook);
-    xlsx.registerTypedefConvertors(consumerWorkbook);
-    xlsx.registerTypedefConvertors(sharedWorkbook);
+    xlsx.registerTypedefConverters(consumerWorkbook);
+    xlsx.registerTypedefConverters(sharedWorkbook);
 
     assert.deepEqual(
         xlsx.convertValue(`{"type":"shared","value":7}`, "RegressionCrossWorkbookArgs"),
@@ -163,7 +163,7 @@ export const runTypedefRegressionTests = async () => {
         assert.equal(objectType.fields[0].type, "id");
 
         xlsx.registerTypedefWorkbook(typedefWorkbook);
-        xlsx.registerTypedefConvertors(typedefWorkbook);
+        xlsx.registerTypedefConverters(typedefWorkbook);
 
         assert.throws(
             () => xlsx.convertValue(`{"id":1}`, "RegressionInferredIdArgs"),

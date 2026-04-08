@@ -1,18 +1,18 @@
-const doings: string[] = [];
+const traces: string[] = [];
 
-export const doing = (msg: string) => {
-    doings.push(msg);
+export const trace = (msg: string) => {
+    traces.push(msg);
     return new (class {
         [Symbol.dispose]() {
-            doings.pop();
+            traces.pop();
         }
     })();
 };
 
 export function error(msg: string): never {
     let str = "";
-    if (doings.length > 0) {
-        str = "\n" + doings.map((v) => `    -> ${v}`).join("\n");
+    if (traces.length > 0) {
+        str = "\n" + traces.map((v) => `    -> ${v}`).join("\n");
     }
     throw new Error(msg + str);
 }

@@ -112,7 +112,7 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
     }
 });
 
-await xlsx.parse(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
+await xlsx.build(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
 await runRegressionTests();
 await runTypedefRegressionTests();
 

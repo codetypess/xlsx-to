@@ -1,5 +1,5 @@
 import { error } from "./errors.js";
-import { convertors } from "./registry.js";
+import { converters } from "./registry.js";
 import { Type, type TCell, type TValue } from "./schema.js";
 
 const tokenizeArray = (str: string) => {
@@ -65,9 +65,9 @@ const convertArray = (str: string, typename: string) => {
 export function convertValue(cell: TCell, typename: string): TCell;
 export function convertValue(value: string, typename: string): TValue;
 export function convertValue(cell: TCell | string, typename: string) {
-    const convertor = convertors[typename.match(/^\w+/)?.[0] ?? ""];
-    if (!convertor) {
-        error(`Convertor not found: '${typename}'`);
+    const converter = converters[typename.match(/^\w+/)?.[0] ?? ""];
+    if (!converter) {
+        error(`Converter not found: '${typename}'`);
     }
 
     const rawtypename = typename.replace("?", "");
@@ -99,7 +99,7 @@ export function convertValue(cell: TCell | string, typename: string) {
         if (typename.includes("[")) {
             result = convertArray(v, rawtypename);
         } else {
-            result = convertor(v) ?? null;
+            result = converter(v) ?? null;
         }
     } catch (e) {
         console.error(e);

@@ -33,7 +33,7 @@ export const enum BuiltinChecker {
     OneOf = "xlsx.checker.oneof",
 }
 
-export type Convertor = (str: string) => TValue;
+export type Converter = (str: string) => TValue;
 export type Checker = (ctx: CheckerContext) => boolean;
 export type CheckerParser = (ctx: Context, ...args: string[]) => Checker;
 export type Processor = (workbook: Workbook, sheet: Sheet, ...args: string[]) => Promise<void>;

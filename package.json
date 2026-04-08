@@ -1,16 +1,16 @@
 {
-  "name": "xlsx-to",
-  "version": "0.4.0",
-  "description": "Parse xlsx workbooks and export typed client/server assets.",
+  "name": "xlsxkit",
+  "version": "1.0.0",
+  "description": "Build typed assets from xlsx workbooks.",
   "main": "./dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codetypess/xlsx-to.git"
+    "url": "git+https://github.com/codetypess/xlsxkit.git"
   },
   "bugs": {
-    "url": "https://github.com/codetypess/xlsx-to/issues"
+    "url": "https://github.com/codetypess/xlsxkit/issues"
   },
-  "homepage": "https://github.com/codetypess/xlsx-to#readme",
+  "homepage": "https://github.com/codetypess/xlsxkit#readme",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

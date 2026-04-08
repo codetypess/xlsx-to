@@ -54,9 +54,9 @@ const clearAllContexts = () => {
 
 export const runRegressionTests = async () => {
     clearAllContexts();
-    await xlsx.parse(["test/res/item.xlsx"], true);
+    await xlsx.build(["test/res/item.xlsx"], true);
     clearAllContexts();
-    await xlsx.parse(["test/res/item.xlsx"], true);
+    await xlsx.build(["test/res/item.xlsx"], true);
     clearAllContexts();
 
     {

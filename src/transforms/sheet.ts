@@ -434,7 +434,7 @@ export const collapseSheet = (workbook: Workbook, sheet: Sheet, ...keys: string[
     return result;
 };
 
-export const decltype = <T>(
+export const resolveDefineType = <T>(
     workbook: Workbook,
     path: string,
     sheetName: string,

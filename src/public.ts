@@ -1,4 +1,4 @@
-export { mergeSheet, noneSheet, registerStringify, simpleSheet } from "./builtins/processors.js";
+export { mergeSheets, registerStringifyRule, simpleSheets } from "./builtins/processors.js";
 export {
     addContext,
     clearRunningContext,
@@ -13,12 +13,12 @@ export {
     type Checker,
     type CheckerContext,
     type CheckerParser,
-    type Convertor,
+    type Converter,
     type Processor,
     type Writer,
 } from "./core/contracts.js";
 export { convertValue, makeCell } from "./core/conversion.js";
-export { assert, doing, error } from "./core/errors.js";
+export { assert, error, trace } from "./core/errors.js";
 export {
     registerChecker,
     registerProcessor,
@@ -71,9 +71,9 @@ export {
     collapseSheet,
     columnSheet,
     configSheet,
-    decltype,
     defineSheet,
     mapSheet,
+    resolveDefineType,
     typedefSheet,
 } from "./transforms/sheet.js";
 export {
@@ -85,7 +85,7 @@ export {
     getTypedef,
     getTypedefWorkbook,
     hasTypedefWorkbook,
-    registerTypedefConvertors,
+    registerTypedefConverters,
     registerTypedefWorkbook,
     type TypedefEntry,
     type TypedefField,
@@ -96,4 +96,4 @@ export {
     type TypeResolver,
 } from "./typedef.js";
 export { escape, format, isNumericKey, keys, outdent, toPascalCase, values } from "./util.js";
-export { parse } from "./xlsx.js";
+export { build } from "./xlsx.js";

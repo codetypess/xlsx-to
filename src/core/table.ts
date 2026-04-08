@@ -115,7 +115,7 @@ const parseValue = (str: string, isKey: boolean = false): LuaValue => {
         if (isKey) {
             throw new Error(`Key cannot be a table: ${str}`);
         }
-        return tableConvertor(trimmed);
+        return tableConverter(trimmed);
     }
 
     if (trimmed === "true") {
@@ -173,7 +173,7 @@ const convertToObject = (parsedItems: Array<ParsedItem>): LuaObject => {
 /**
  * parse Lua table string to TypeScript object or array
  */
-export const tableConvertor = (str: string): LuaArray | LuaObject | null => {
+export const tableConverter = (str: string): LuaArray | LuaObject | null => {
     if (!str || typeof str !== "string") {
         throw new Error(`Invalid table string: '${str}'`);
     }

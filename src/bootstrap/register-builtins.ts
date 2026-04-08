@@ -10,12 +10,12 @@ import {
     UniqueCheckerParser,
 } from "../builtins/checkers.js";
 import {
-    boolConvertor,
-    floatConvertor,
-    intConvertor,
-    jsonConvertor,
-    stringConvertor,
-} from "../builtins/convertors.js";
+    boolConverter,
+    floatConverter,
+    intConverter,
+    jsonConverter,
+    stringConverter,
+} from "../builtins/converters.js";
 import {
     AutoRegisterProcessor,
     CollapseProcessor,
@@ -24,16 +24,16 @@ import {
     DefineProcessor,
     GenTypeProcessor,
     MapProcessor,
-    mergeSheet,
-    registerStringify,
-    simpleSheet,
+    mergeSheets,
+    registerStringifyRule,
+    simpleSheets,
     StringifyProcessor,
     TypedefProcessor,
     TypedefWriteProcessor,
 } from "../builtins/processors.js";
 import { BuiltinChecker } from "../core/contracts.js";
 import { registerChecker, registerProcessor, registerType } from "../core/registry.js";
-import { tableConvertor } from "../core/table.js";
+import { tableConverter } from "../core/table.js";
 
 let registered = false;
 
@@ -43,13 +43,13 @@ export const registerBuiltins = () => {
     }
     registered = true;
 
-    registerType("auto", intConvertor);
-    registerType("bool", boolConvertor);
-    registerType("float", floatConvertor);
-    registerType("int", intConvertor);
-    registerType("json", jsonConvertor);
-    registerType("string", stringConvertor);
-    registerType("table", tableConvertor);
+    registerType("auto", intConverter);
+    registerType("bool", boolConverter);
+    registerType("float", floatConverter);
+    registerType("int", intConverter);
+    registerType("json", jsonConverter);
+    registerType("string", stringConverter);
+    registerType("table", tableConverter);
 
     registerChecker(BuiltinChecker.Expr, ExprCheckerParser);
     registerChecker(BuiltinChecker.Follow, FollowCheckerParser);
@@ -87,6 +87,6 @@ export const registerBuiltins = () => {
         priority: 999,
     });
 
-    registerStringify("merge", mergeSheet);
-    registerStringify("simple", simpleSheet);
+    registerStringifyRule("merge", mergeSheets);
+    registerStringifyRule("simple", simpleSheets);
 };

@@ -4,7 +4,7 @@ import { getContext } from "./context.js";
 import type { CheckerType } from "./contracts.js";
 import { BuiltinChecker } from "./contracts.js";
 import { convertValue } from "./conversion.js";
-import { assert, doing, error } from "./errors.js";
+import { assert, error, trace } from "./errors.js";
 import { DEFAULT_TAG, DEFAULT_WRITER, processors, writers } from "./registry.js";
 import { type Field, type Sheet, type TCell, type TRow, Type } from "./schema.js";
 import { checkType, ignoreField, toString } from "./value.js";
@@ -75,7 +75,7 @@ export const parseChecker = (
             if (force) {
                 s = s.slice(1);
             }
-            using _ = doing(`Parsing checker at ${location}: '${s}'`);
+            using _ = trace(`Parsing checker at ${location}: '${s}'`);
             let checker: CheckerType | undefined;
             if (s.startsWith("@")) {
                 const [, name = "", arg = ""] = s.match(/^@(\w+)(?:\((.*?)\))?$/) ?? [];
@@ -194,7 +194,7 @@ const readCell = (sheet: xlsx.Sheet, r: number, c: number) => {
     return cell;
 };
 
-export const readHeader = (path: string, data: xlsx.Workbook) => {
+export const loadHeader = (path: string, data: xlsx.Workbook) => {
     const ctx = getContext(DEFAULT_WRITER, DEFAULT_TAG)!;
     const requiredProcessors = Object.values(processors)
         .filter((p) => p.option.required)
@@ -212,7 +212,7 @@ export const readHeader = (path: string, data: xlsx.Workbook) => {
     let firstSheet: Sheet | null = null;
 
     for (const rawSheet of data.getSheets()) {
-        using _ = doing(`Reading sheet '${rawSheet.name}' in '${path}'`);
+        using _ = trace(`Reading sheet '${rawSheet.name}' in '${path}'`);
         const firstCell = rawSheet.getCell(1, 1);
         if (rawSheet.name.startsWith("#") || !firstCell) {
             continue;
@@ -311,14 +311,14 @@ export const readHeader = (path: string, data: xlsx.Workbook) => {
     }
 };
 
-export const readBody = (path: string, data: xlsx.Workbook) => {
+export const loadBody = (path: string, data: xlsx.Workbook) => {
     const ctx = getContext(DEFAULT_WRITER, DEFAULT_TAG)!;
     const workbook = ctx.get(path);
     for (const rawSheet of data.getSheets()) {
         if (!workbook.has(rawSheet.name)) {
             continue;
         }
-        using _ = doing(`Reading sheet '${rawSheet.name}' in '${path}'`);
+        using _ = trace(`Reading sheet '${rawSheet.name}' in '${path}'`);
         const sheet = workbook.get(rawSheet.name);
         const start = toString(readCell(rawSheet, 1, 1)).startsWith("@")
             ? MAX_HEADERS
@@ -386,12 +386,12 @@ export const readBody = (path: string, data: xlsx.Workbook) => {
     }
 };
 
-export const parseBody = () => {
+export const convertBody = () => {
     const ctx = getContext(DEFAULT_WRITER, DEFAULT_TAG)!;
     for (const workbook of ctx.workbooks) {
         console.log(`parsing: '${workbook.path}'`);
         for (const sheet of workbook.sheets) {
-            using _ = doing(`Parsing sheet '${sheet.name}' in '${workbook.path}'`);
+            using _ = trace(`Parsing sheet '${sheet.name}' in '${workbook.path}'`);
             for (const row of Object.values(sheet.data) as TRow[]) {
                 if (!row || typeof row !== "object" || row["!type"] !== Type.Row) {
                     continue;

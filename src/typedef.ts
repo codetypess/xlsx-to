@@ -1,7 +1,7 @@
 import JSON5 from "json5";
 import { convertValue } from "./core/conversion.js";
 import { assert, error } from "./core/errors.js";
-import { convertors, registerType } from "./core/registry.js";
+import { converters, registerType } from "./core/registry.js";
 import { type Sheet, type TObject } from "./core/schema.js";
 import { type Context, Workbook } from "./core/workbook.js";
 import { StringBuffer } from "./stringify.js";
@@ -146,7 +146,7 @@ const stringifyNestedValue = (value: unknown) => {
     return JSON.stringify(value);
 };
 
-export const registerTypedefConvertors = (typedefWorkbook: TypedefWorkbook) => {
+export const registerTypedefConverters = (typedefWorkbook: TypedefWorkbook) => {
     const convertObject = (type: TypedefObject, raw: unknown) => {
         assert(
             !!raw && typeof raw === "object" && !Array.isArray(raw),
@@ -658,9 +658,9 @@ export const genXlsxType = (ctx: Context, resolver: TypeResolver) => {
                 let typename = field.typename.match(/^[\w@]+/)?.[0] ?? "";
                 if (typename.startsWith("@")) {
                     typename = "unknown";
-                } else if (!convertors[typename]) {
+                } else if (!converters[typename]) {
                     const where = `file: ${workbook.path}#${sheet.name}#${field.location}:${field.name}`;
-                    throw new Error(`convertor not found: ${typename} (${where})`);
+                    throw new Error(`converter not found: ${typename} (${where})`);
                 }
                 typeBuffer.writeLine(`/**`);
                 typeBuffer.writeLine(

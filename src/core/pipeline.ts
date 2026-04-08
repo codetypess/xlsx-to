@@ -2,7 +2,7 @@ import { values } from "../util.js";
 import { addContext, clearRunningContext, getContexts, setRunningContext } from "./context.js";
 import type { CheckerType } from "./contracts.js";
 import { BuiltinChecker, type CheckerContext } from "./contracts.js";
-import { assert, doing, error } from "./errors.js";
+import { assert, error, trace } from "./errors.js";
 import {
     checkerParsers,
     type ProcessorOption,
@@ -22,7 +22,7 @@ const resolveCheckerNode = (ctx: Context, checker: CheckerType) => {
     if (!parser) {
         error(`Checker parser not found at ${checker.location}: '${checker.name}'`);
     }
-    using _ = doing(`Parsing checker at ${checker.location}: ${checker.source}`);
+    using _ = trace(`Parsing checker at ${checker.location}: ${checker.source}`);
     assert(!checker.exec, `Checker already parsed: ${checker.location}`);
     checker.exec = parser(ctx, ...checker.args);
     for (const child of checker.oneof) {
@@ -43,7 +43,7 @@ export const resolveChecker = () => {
         }
         for (const workbook of ctx.workbooks) {
             for (const sheet of workbook.sheets) {
-                using _ = doing(`Resolving checker in '${workbook.path}#${sheet.name}'`);
+                using _ = trace(`Resolving checker in '${workbook.path}#${sheet.name}'`);
                 for (const field of sheet.fields) {
                     for (const checker of field.checkers as CheckerType[]) {
                         resolveCheckerNode(ctx, checker);
@@ -64,7 +64,7 @@ export const copyWorkbook = () => {
             const newCtx = addContext(new Context(writer, ctx.tag));
             for (const workbook of ctx.workbooks) {
                 for (const sheet of workbook.sheets) {
-                    using _ = doing(`Checking sheet '${sheet.name}' in '${workbook.path}'`);
+                    using _ = trace(`Checking sheet '${sheet.name}' in '${workbook.path}'`);
                     const data: TObject = {};
                     copyTag(sheet.data, data);
                     const keyField = sheet.fields[0];
@@ -222,7 +222,7 @@ export const performChecker = () => {
             for (const sheet of workbook.sheets) {
                 for (const field of sheet.fields) {
                     const msg = `'${field.name}' at ${field.location} in '${workbook.path}#${sheet.name}'`;
-                    using _ = doing(`Checking ${msg}`);
+                    using _ = trace(`Checking ${msg}`);
                     try {
                         invokeChecker(workbook, sheet, field, errors);
                     } catch (e) {
@@ -269,7 +269,7 @@ export const performProcessor = async (stage: ProcessorOption["stage"], writer?:
             }
             arr.sort((a, b) => a.processor.option.priority - b.processor.option.priority);
             for (const { processor, sheet, args, name } of arr) {
-                using _ = doing(
+                using _ = trace(
                     `Performing processor '${name}' in '${workbook.path}#${sheet.name}'`
                 );
                 try {

@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
 import { dirname } from "node:path";
+import { assert } from "./core/errors.js";
 import { writers } from "./core/registry.js";
 import type { TArray, TObject, TValue } from "./core/schema.js";
-import { type Workbook, assert } from "./public.js";
+import type { Workbook } from "./core/workbook.js";
 import {
     JsonStringifyOption,
     LuaStringifyOption,

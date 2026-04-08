@@ -1,4 +1,4 @@
-# XLSX TO
+# XLSXKIT
 
 将遵循固定表头约定的 `.xlsx` 工作簿转换为可校验的数据模型，并按需输出为 JSON、TypeScript、Lua 等文件。
 
@@ -30,10 +30,10 @@ npm run test
 最小接入流程只有两步：
 
 1. 注册一个或多个 writer，定义不同 `processor` 的输出行为。
-2. 调用 `parse()` 读取工作簿并触发转换、校验和输出。
+2. 调用 `build()` 读取工作簿并触发转换、校验和输出。
 
 ```ts
-import * as xlsx from "xlsx-to";
+import * as xlsx from "xlsxkit";
 
 const OUTPUT_DIR = "output";
 
@@ -97,14 +97,14 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
     }
 });
 
-await xlsx.parse(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
+await xlsx.build(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
 ```
 
 完整示例见 [test/test.ts](test/test.ts)。
 
 ## 工作流程
 
-`parse(files, headerOnly?)` 的主流程如下：
+`build(files, headerOnly?)` 的主流程如下：
 
 1. 读取每个工作簿的表头与数据。
 2. 执行 `after-read`、`pre-parse`、`after-parse` 等阶段处理器。
@@ -116,7 +116,7 @@ await xlsx.parse(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.
 如果只需要读取表头，可传入 `true`：
 
 ```ts
-await xlsx.parse(["test/res/item.xlsx"], true);
+await xlsx.build(["test/res/item.xlsx"], true);
 ```
 
 ## Excel 结构约定
@@ -208,7 +208,7 @@ int     string  @reward_type string      int[]
 自定义规则：
 
 ```ts
-xlsx.registerStringify("task", (workbook) => {
+xlsx.registerStringifyRule("task", (workbook) => {
     const result: Record<string, unknown> = {};
     for (const sheet of workbook.sheets) {
         result[sheet.name] = sheet.data;
@@ -304,7 +304,7 @@ $.attrs?[*][0]
 
 ## typedef
 
-`@typedef` 用于把某个 Sheet 声明为类型定义源，并自动注册对应 convertor。
+`@typedef` 用于把某个 Sheet 声明为类型定义源，并自动注册对应 converter。
 
 typedef Sheet 至少需要这些字段：
 
@@ -334,12 +334,12 @@ typedef Sheet 至少需要这些字段：
 
 | API                                          | 说明                      |
 | -------------------------------------------- | ------------------------- |
-| `parse(files, headerOnly?)`                  | 读取工作簿并执行完整管线  |
+| `build(files, headerOnly?)`                  | 读取工作簿并执行完整管线  |
 | `registerWriter(name, writer)`               | 注册 writer               |
-| `registerType(name, convertor)`              | 注册自定义类型            |
+| `registerType(name, converter)`              | 注册自定义类型            |
 | `registerChecker(name, parser)`              | 注册自定义 checker        |
 | `registerProcessor(name, processor, option)` | 注册自定义处理器          |
-| `registerStringify(name, rule)`              | 注册自定义 stringify 规则 |
+| `registerStringifyRule(name, rule)`          | 注册自定义 stringify 规则 |
 
 ### 输出与文件
 
@@ -420,7 +420,7 @@ xlsx.registerProcessor(
 - [src/core/](src/core)
   workbook/context、registry、parser、pipeline 等核心基础设施。
 - [src/builtins/](src/builtins)
-  内置 checker、convertor、processor。
+  内置 checker、converter、processor。
 - [src/transforms/sheet.ts](src/transforms/sheet.ts)
   sheet 级数据重组与 typedef 转换。
 - [src/typedef.ts](src/typedef.ts)

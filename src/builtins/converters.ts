@@ -1,5 +1,5 @@
 import JSON5 from "json5";
-import { Convertor } from "../core/contracts.js";
+import { Converter } from "../core/contracts.js";
 
 const bools: Record<string, boolean> = {
     ["true"]: true,
@@ -11,11 +11,11 @@ const bools: Record<string, boolean> = {
     ["x"]: false,
 };
 
-export const boolConvertor: Convertor = (str) => {
+export const boolConverter: Converter = (str) => {
     return bools[str] ?? null;
 };
 
-export const intConvertor: Convertor = (str) => {
+export const intConverter: Converter = (str) => {
     if (str === "") {
         return null;
     }
@@ -26,11 +26,11 @@ export const intConvertor: Convertor = (str) => {
     return result;
 };
 
-export const stringConvertor: Convertor = (str) => {
+export const stringConverter: Converter = (str) => {
     return str === "" ? null : str;
 };
 
-export const floatConvertor: Convertor = (str) => {
+export const floatConverter: Converter = (str) => {
     if (str === "") {
         return null;
     }
@@ -41,7 +41,7 @@ export const floatConvertor: Convertor = (str) => {
     return result;
 };
 
-export const jsonConvertor: Convertor = (str) => {
+export const jsonConverter: Converter = (str) => {
     try {
         return JSON5.parse(str);
         // eslint-disable-next-line no-empty

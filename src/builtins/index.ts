@@ -1,3 +1,3 @@
 export * from "./checkers.js";
-export * from "./convertors.js";
+export * from "./converters.js";
 export * from "./processors.js";
