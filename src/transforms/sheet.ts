@@ -1,9 +1,17 @@
-import { RowIndexer } from "../indexer";
 import { convertValue } from "../core/conversion";
-import { assert } from "../core/errors";
-import { type Sheet, type TArray, type TObject, type TRow, type TValue, Type } from "../core/schema";
+import { assert, error } from "../core/errors";
+import {
+    type Sheet,
+    type TArray,
+    type TCell,
+    type TObject,
+    type TRow,
+    type TValue,
+    Type,
+} from "../core/schema";
 import { checkType, isNotNull, toString } from "../core/value";
 import { Workbook } from "../core/workbook";
+import { RowIndexer } from "../indexer";
 import { TypedefField, TypedefObject, TypedefUnion, TypedefWorkbook } from "../typedef";
 import { values } from "../util";
 
@@ -89,6 +97,12 @@ export const configSheet = (
         assert(!typename.endsWith("?"), `Type '${typename}' is not valid`);
         const value = convertValue(row[valueKey], typename);
         value["!comment"] = row[commentKey].v as string;
+        if (result[key] !== undefined) {
+            const last = result[key] as TCell;
+            error(
+                `Key '${key}' is already defined, last defined at ${last.r}, current at ${value.r}`
+            );
+        }
         result[key] = value;
     }
     return result;

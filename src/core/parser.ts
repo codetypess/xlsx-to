@@ -275,6 +275,11 @@ export const loadHeader = (path: string, data: xlsx.Workbook) => {
                 if (parsed[name]) {
                     error(`Duplicate field name: '${name}' at ${toLocation(c, r)}`);
                 }
+                if (name.match(/[^A-Za-z0-9_$-]/)) {
+                    error(
+                        `Invalid field name: '${name}' at ${toLocation(c, r)}, only '$A-Za-z0-9_' are allowed`
+                    );
+                }
                 parsed[name] = true;
                 sheet.fields.push({
                     index: c - 1,
