@@ -349,7 +349,7 @@ export interface TaskDefineRow {
      */
     value_comment: { v?: string } & TCell;
     /**
-     *  (location: F2) (type: @value_type) (checker: $&key2=MAIN==#main.type&condition=mainline_event) (writer: client|server)
+     *  (location: F2) (type: @value_type) (checker: \@refer(checker)) (writer: client|server)
      */
     value: { v: unknown } & TCell;
     /**
@@ -357,11 +357,15 @@ export interface TaskDefineRow {
      */
     value_type: { v: string } & TCell;
     /**
-     *  (location: H2) (type: string?) (checker: x) (writer: client|server)
+     * 检查 (location: H2) (type: string?) (checker: x) (writer: client|server)
+     */
+    checker: { v?: string } & TCell;
+    /**
+     *  (location: I2) (type: string?) (checker: x) (writer: client|server)
      */
     enum: { v?: string } & TCell;
     /**
-     *  (location: I2) (type: bool?) (checker: x) (writer: client|server)
+     *  (location: J2) (type: bool?) (checker: x) (writer: client|server)
      */
     enum_option: { v?: boolean } & TCell;
 }

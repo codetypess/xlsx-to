@@ -380,7 +380,7 @@ export const loadBody = (path: string, data: xlsx.Workbook) => {
 
                 const refer = refers[field.name];
                 if (refer && cell.v) {
-                    refer.checker.refers[toLocation(refer.field.index, r)] = parseChecker(
+                    refer.checker.refers[toLocation(refer.field.index + 1, r)] = parseChecker(
                         basename(workbook.path),
                         sheet.name,
                         cell.r,

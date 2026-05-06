@@ -65,22 +65,18 @@ export enum TaskState {
 }
 
 export type TaskTypeKey =
-    | "MAIN"
     | "BRANCH"
     | "DAILY"
     | "WEEKLY"
     | "EVENTS"
     | "PASSES"
-    | "EXCHANGE";
+    | "EXCHANGE"
+    | "MAIN";
 
 /**
  * 任务类型
  */
 export enum TaskType {
-    /**
-     * 主线任务
-     */
-    MAIN = 1,
     /**
      * 支线任务
      */
@@ -105,6 +101,10 @@ export enum TaskType {
      * 兑换任务
      */
     EXCHANGE = 7,
+    /**
+     * 主线任务
+     */
+    MAIN = 9,
 }
 
 
@@ -113,6 +113,6 @@ export const TaskDefine = {
         /**
          * 新手最后一个任务id
          */
-        BEGINNER_LAST_TASK_ID: 1023,
+        BEGINNER_LAST_TASK_ID: 1013,
     },
 } as const;

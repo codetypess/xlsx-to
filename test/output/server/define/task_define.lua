@@ -1,7 +1,7 @@
 return {
     TASK = {
         -- 新手最后一个任务id
-        BEGINNER_LAST_TASK_ID = 1023,
+        BEGINNER_LAST_TASK_ID = 1013,
     },
     ---@enum TaskCondition
     -- 任务条件
@@ -34,8 +34,6 @@ return {
     ---@enum TaskType
     -- 任务类型
     TASK_TYPE = {
-        -- 主线任务
-        MAIN = 1,
         -- 支线任务
         BRANCH = 2,
         -- 日常任务
@@ -48,5 +46,7 @@ return {
         PASSES = 6,
         -- 兑换任务
         EXCHANGE = 7,
+        -- 主线任务
+        MAIN = 9,
     },
 }

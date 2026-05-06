@@ -1,15 +1,17 @@
 import * as fs from "fs";
 import * as xlsx from "../index";
+import { runCheckerRegressionTests } from "./checker.regression";
 import "./init.js";
 import "./processor/gen-indexer.processor.js";
-import "./processor/post_stringify.processor.js";
 import { defines, types } from "./processor/post_stringify.processor";
+import "./processor/post_stringify.processor.js";
 import "./processor/validate.processor.js";
-import "./processor/workbook-typedef.processor.js";
 import { makeTypename } from "./processor/workbook-typedef.processor";
+import "./processor/workbook-typedef.processor.js";
+import { runProjectRegressionTests } from "./project.regression";
 import { runRegressionTests } from "./regression";
-import { runTypedefRegressionTests } from "./typedef.regression";
 import "./rule/task.rule.js";
+import { runTypedefRegressionTests } from "./typedef.regression";
 
 const t = Date.now();
 
@@ -115,5 +117,7 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
 await xlsx.build(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
 await runRegressionTests();
 await runTypedefRegressionTests();
+await runProjectRegressionTests();
+await runCheckerRegressionTests();
 
 console.log(Date.now() - t);

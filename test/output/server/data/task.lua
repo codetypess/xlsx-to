@@ -442,7 +442,7 @@ return {
       },
       sort = 1,
       total = true,
-      type = 1,
+      type = 9,
     },
     [1002] = {
       args = {
@@ -462,7 +462,7 @@ return {
       },
       sort = 2,
       total = true,
-      type = 1,
+      type = 9,
     },
     [1003] = {
       args = {
@@ -486,7 +486,7 @@ return {
       },
       sort = 3,
       total = true,
-      type = 1,
+      type = 9,
     },
     [1013] = {
       args = {
@@ -504,7 +504,7 @@ return {
       },
       sort = 12,
       total = false,
-      type = 1,
+      type = 9,
     },
     [1014] = {
       args = {
@@ -525,7 +525,7 @@ return {
       },
       sort = 4,
       total = false,
-      type = 1,
+      type = 9,
     },
     [100001] = {
       args = {
@@ -545,7 +545,7 @@ return {
       },
       sort = 8,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100002] = {
       args = {
@@ -565,7 +565,7 @@ return {
       },
       sort = 9,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100003] = {
       args = {
@@ -585,7 +585,7 @@ return {
       },
       sort = 10,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100301] = {
       args = {
@@ -612,7 +612,7 @@ return {
       },
       sort = 5,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100302] = {
       args = {
@@ -631,7 +631,7 @@ return {
       },
       sort = 6,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100303] = {
       args = {
@@ -651,7 +651,7 @@ return {
       },
       sort = 7,
       total = true,
-      type = 1,
+      type = 9,
     },
     [100304] = {
       args = {
@@ -671,7 +671,7 @@ return {
       },
       sort = 11,
       total = true,
-      type = 1,
+      type = 9,
     },
   },
   weekly = {

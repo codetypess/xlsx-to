@@ -484,7 +484,7 @@
       ],
       "sort": 1,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "1002": {
       "args": {
@@ -506,7 +506,7 @@
       ],
       "sort": 2,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "1003": {
       "args": {
@@ -532,7 +532,7 @@
       ],
       "sort": 3,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "1013": {
       "args": {
@@ -552,7 +552,7 @@
       ],
       "sort": 12,
       "total": false,
-      "type": 1
+      "type": 9
     },
     "1014": {
       "args": {
@@ -575,7 +575,7 @@
       ],
       "sort": 4,
       "total": false,
-      "type": 1
+      "type": 9
     },
     "100001": {
       "args": {
@@ -597,7 +597,7 @@
       ],
       "sort": 8,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100002": {
       "args": {
@@ -619,7 +619,7 @@
       ],
       "sort": 9,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100003": {
       "args": {
@@ -644,7 +644,7 @@
       ],
       "sort": 10,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100301": {
       "args": {
@@ -676,7 +676,7 @@
       ],
       "sort": 5,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100302": {
       "args": {
@@ -697,7 +697,7 @@
       ],
       "sort": 6,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100303": {
       "args": {
@@ -719,7 +719,7 @@
       ],
       "sort": 7,
       "total": true,
-      "type": 1
+      "type": 9
     },
     "100304": {
       "args": {
@@ -741,7 +741,7 @@
       ],
       "sort": 11,
       "total": true,
-      "type": 1
+      "type": 9
     }
   },
   "weekly": {
