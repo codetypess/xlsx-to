@@ -46,7 +46,45 @@ fastxlsx get path/to/file.xlsx --sheet Sheet1 --cell B2
 fastxlsx validate path/to/file.xlsx
 ```
 
+`inspect` now returns a `recommendedRead` object per sheet. Follow that routing hint before choosing between `sheet`, `config-table`, and `table`, and prefer reusing `recommendedRead.commands.*` directly instead of rebuilding the command by hand.
+
 Use `--in-place` only when the user clearly wants to overwrite the source workbook.
+
+## Hard Routing Rules
+
+Keep these rules ahead of guesswork:
+
+- Do not abandon this skill after the first failed, empty, or obviously misaligned read. Re-route within the CLI first.
+- After `inspect`, prefer the target sheet's `recommendedRead.commands.*` output over hand-built read commands. Only override it when the user explicitly provides different row boundaries or a different sheet target.
+- Do not start with `table` for an arbitrary sheet unless a profile already exists or header and data row boundaries are known.
+- Do not treat `config-table` as the generic reader for every config-like sheet. Use it when one header row directly names the fields being edited.
+- If `inspect` shows marker headers such as `@config` or `@define;...`, row 1 is not the business header row. Re-run discovery with another header row or generate a table profile.
+- If a read returns structure rows such as `int`, `string`, `auto`, `>>`, `!!!`, `###`, or `-`, you are not looking at final business rows yet.
+
+## Read Recovery
+
+When the first read does not return the rows the user asked for, follow this order:
+
+1. Run `fastxlsx inspect path/to/file.xlsx` and confirm the sheet name, previewed headers, and `recommendedRead` route.
+2. If `recommendedRead.commands.list` or `recommendedRead.commands.inspect` matches the user's target, run that suggested command first instead of constructing a new one.
+3. If row 1 looks like a marker row rather than real field names, re-run discovery with another preview row:
+
+```bash
+fastxlsx inspect path/to/file.xlsx --header-row 2
+```
+
+4. If `sheet records list` or `sheet export` returns type rows or structure markers instead of business rows, switch to `table` with explicit boundaries or a generated profile:
+
+```bash
+fastxlsx table generate-profiles path/to/file.xlsx
+fastxlsx table inspect path/to/file.xlsx --sheet Sheet1 --header-row 1 --data-start-row 6
+fastxlsx table list path/to/file.xlsx --profile 'file#Sheet1'
+```
+
+5. If `table ... --profile` fails because the profile does not exist yet, generate profiles and retry. If profile inference still cannot find the sheet, fall back to explicit `--header-row` and `--data-start-row`.
+6. Re-read the exact row or cell after switching commands so the final answer is based on workbook output, not on the intended command.
+
+Treat "wrong rows returned" as a routing problem, not as proof that the CLI cannot answer the question.
 
 ## Command Choice
 
@@ -56,6 +94,18 @@ Use `inspect` and `get` for read-only discovery:
 fastxlsx inspect path/to/file.xlsx
 fastxlsx get path/to/file.xlsx --sheet Sheet1 --cell B2
 ```
+
+Use plain sheet read commands for ordinary `.xlsx` sheet content. For non-profile workbooks, this is the default way to read a sheet unless the user has identified a structured table layout:
+
+```bash
+fastxlsx sheet records list path/to/file.xlsx --sheet Data --header-row 1
+fastxlsx sheet export path/to/file.xlsx --sheet Data --format json
+fastxlsx sheet export path/to/file.xlsx --sheet Data --format csv --output rows.csv
+```
+
+Do not use `table inspect`, `table list`, or `table get` merely to read an arbitrary worksheet. `table` is for structured sheets where a profile already exists or the header row, data start row, and key fields are explicitly known.
+
+Plain `sheet` reads fit best when row 1 is the real header row and business data starts immediately underneath it. If the first returned records look like schema rows, comments, validators, or sentinels, switch to `table`.
 
 Use `set` for single-cell edits:
 
@@ -86,30 +136,52 @@ Use `apply` only when the change genuinely spans multiple actions. Single-cell o
 
 For `apply --ops`, read [OPS-SCHEMA.md](OPS-SCHEMA.md).
 
-Use `config-table` for header-based config sheets where each row is a record under one header row:
+Use `sheet import` and `sheet records` for plain header-mapped sheet writes:
+
+```bash
+fastxlsx sheet import path/to/file.xlsx --sheet Data --format json --from rows.json --mode update --key-field id --output out.xlsx
+fastxlsx sheet records update path/to/file.xlsx --sheet Data --key-field id --value 1001 --record '{"desc":"patched"}' --output out.xlsx
+fastxlsx sheet records upsert path/to/file.xlsx --sheet Data --key-field id --record '{"id":1001,"desc":"complete row"}' --output out.xlsx
+```
+
+Use `update` for partial matched-row edits. It only writes fields present in the input record and preserves omitted fields.
+
+Use `upsert` only when the payload contains the full row you want after the command. On matched rows, `upsert` replaces the row and clears omitted fields. On missing rows, `upsert` inserts a new row.
+
+Use `replace` only when the whole record set or table body should be rewritten.
+
+Use `config-table` for simple header-based config sheets where one header row directly names the fields and the data rows begin immediately below it:
 
 ```bash
 fastxlsx config-table init path/to/file.xlsx --sheet Config --headers '["Key","Value"]' --output out.xlsx
 fastxlsx config-table list path/to/file.xlsx --sheet Config
 fastxlsx config-table get path/to/file.xlsx --sheet Config --field Key --text timeout
+fastxlsx config-table update path/to/file.xlsx --sheet Config --field Key --text timeout --record '{"Value":"30"}' --output out.xlsx
 fastxlsx config-table upsert path/to/file.xlsx --sheet Config --field Key --record '{"Key":"timeout","Value":"30"}' --in-place
 fastxlsx config-table delete path/to/file.xlsx --sheet Config --field Key --text timeout --output out.xlsx
 fastxlsx config-table replace path/to/file.xlsx --sheet Config --records '[{"Key":"timeout","Value":"30"}]' --output out.xlsx
+fastxlsx config-table sync path/to/file.xlsx --sheet Config --from-json config.json --mode update --output out.xlsx
 fastxlsx config-table sync path/to/file.xlsx --sheet Config --from-json config.json --mode upsert --output out.xlsx
 ```
 
-Use `table` for structured sheets with explicit header and data row boundaries:
+If `inspect` shows marker headers such as `@config`, or the actual config fields only appear on a later row, do not keep forcing `config-table` with the default header row. Re-run discovery with another `--header-row`, or generate a profile and use `table --profile` instead.
+
+Use `table` for structured sheets with explicit header and data row boundaries, not as the generic sheet reader:
 
 ```bash
 fastxlsx table inspect path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6
 fastxlsx table list path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6
 fastxlsx table get path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key 1001 --key-field id
+fastxlsx table update path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key-field id --key 1001 --record '{"desc":"patched"}' --output out.xlsx
 fastxlsx table upsert path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key-field id --record '{"id":1001,"desc":"..."}' --in-place
 fastxlsx table delete path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key 1001 --key-field id --output out.xlsx
+fastxlsx table sync path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key-field id --from-json rows.json --mode update --output out.xlsx
 fastxlsx table sync path/to/file.xlsx --sheet main --header-row 1 --data-start-row 6 --key-field id --from-json rows.json --mode replace --output out.xlsx
 ```
 
 Treat rows such as `auto`, `>>`, `!!!`, `###`, and `-` as structure to preserve, not built-in business semantics.
+
+These marker rows are a strong signal that `table` is the right reader, usually with a `dataStartRow` after the marker block.
 
 ## Profiles
 
@@ -121,9 +193,13 @@ Profiles matter because they freeze the agreed sheet name, header row, data star
 fastxlsx table list res/task.xlsx --profile 'task#main'
 fastxlsx table get res/task.xlsx --profile 'task#conf' --key '"GATE_SIEGE_TIME"'
 fastxlsx table get res/task.xlsx --profile 'task#define' --key '{"key1":"TASK_TYPE","key2":"MAIN"}'
+fastxlsx table update res/task.xlsx --profile 'task#main' --key 1001 --record '{"desc":"patched"}' --in-place
 fastxlsx table upsert res/task.xlsx --profile 'task#main' --record '{"id":1001,"desc":"..."}' --in-place
+fastxlsx table sync res/task.xlsx --profile 'task#conf' --from-json conf.json --mode update --output out.xlsx
 fastxlsx table sync res/task.xlsx --profile 'task#conf' --from-json conf.json --mode upsert --output out.xlsx
 ```
+
+When a workbook uses metadata rows, sentinel rows, composite keys, or non-row-1 headers, prefer generating or reusing profiles early. This is often the fastest way to get clean reads.
 
 If profiles do not exist yet, generate them first:
 
@@ -132,9 +208,9 @@ fastxlsx table generate-profiles res/task.xlsx
 fastxlsx table generate-profiles res/task.xlsx res/monster.xlsx --sheet-filter '^(main|conf)$' --output table-profiles.json
 ```
 
-Sheets whose table profile cannot be inferred, or whose generated profile name duplicates an earlier sheet, are skipped. The JSON output includes `skipped` entries with `file`, `sheet`, `reason`, and `profileName` when available.
+Workbook open failures, sheets whose table profile cannot be inferred, and duplicate generated profile names are skipped. The JSON output includes `skipped` entries with `file`, `reason`, and optional `sheet` or `profileName`.
 
-When `--output` is used, stdout only prints `Profile file generated: <path>`; read the output file for the full generated `profiles` object.
+When `--output` is used, stdout only prints `Generated profile file: <path>`; read the output file for the full generated `profiles` object and any `skipped` records.
 
 For large workbook sets, avoid passing every path as a command argument. Write the paths to a newline-delimited file and use `--files-from` so shell argument length limits are not hit:
 

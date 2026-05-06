@@ -1,4 +1,4 @@
 interface:
   display_name: "FastXLSX Agent"
-  short_description: "Inspect, sync, and patch XLSX via CLI"
-  default_prompt: "Use $fastxlsx to inspect, sync, or patch an XLSX workbook with the available fastxlsx CLI entry."
+  short_description: "Read and patch XLSX with the right CLI workflow"
+  default_prompt: "Use $fastxlsx to inspect, read, sync, or patch an XLSX workbook with the available fastxlsx CLI entry. Start with `inspect`. After `inspect`, prefer the target sheet's `recommendedRead.commands.*` output over hand-writing your own read command. Reuse the suggested `list`, `inspect`, and `generateProfiles` commands exactly unless the user has already given more specific sheet, header-row, or data-start-row requirements. For ordinary sheet reads use `sheet records` or `sheet export` only when row 1 is the real header row and business data starts immediately below it. Use `config-table` only for simple header-based config sheets. If `inspect` shows marker headers like `@config` or a read returns structure rows such as `int`, `auto`, `>>`, `!!!`, `###`, or `-`, switch to `table generate-profiles` and then `table ... --profile` or explicit `--header-row` / `--data-start-row`. Do not abandon fastxlsx after the first failed or misaligned read; recover within the CLI workflow."
