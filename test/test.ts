@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as xlsx from "../index";
 import { runCheckerRegressionTests } from "./checker.regression";
+import { runInfrastructureRegressionTests } from "./infrastructure.regression";
 import "./init.js";
 import "./processor/gen-indexer.processor.js";
 import { defines, types } from "./processor/post_stringify.processor";
@@ -119,5 +120,6 @@ await runRegressionTests();
 await runTypedefRegressionTests();
 await runProjectRegressionTests();
 await runCheckerRegressionTests();
+await runInfrastructureRegressionTests();
 
 console.log(Date.now() - t);

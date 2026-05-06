@@ -696,6 +696,49 @@ const runReferCheckerPipelineTests = () => {
     }
 };
 
+const runCheckerAggregationTests = () => {
+    clearAllContexts();
+    try {
+        const ctx = xlsx.addContext(new xlsx.Context("client", "checker-aggregate-format"));
+        const workbook = new xlsx.Workbook(ctx, "aggregate-format.xlsx");
+        const sheet = makeSheet("main", [{ name: "id", typename: "int" }]);
+        (sheet.fields[0]!.checkers as CheckerType[]).push(
+            ...parseChecker(workbook.path, sheet.name, "A4", 0, "@unique")
+        );
+        sheet.data["1"] = makeRow({
+            id: makeCell(1, "int", "A2"),
+        });
+        sheet.data["2"] = makeRow({
+            id: makeCell(1, "int", "A3"),
+        });
+        ctx.add(workbook);
+        workbook.add(sheet);
+
+        resolveChecker();
+
+        let failure: Error | undefined;
+        try {
+            performChecker();
+        } catch (error) {
+            failure = error as Error;
+        }
+
+        assert(failure);
+        assert.match(failure.message, /tag: checker-aggregate-format writer: client/);
+        assert.match(failure.message, /builtin check:/);
+        assert.match(failure.message, /path: aggregate-format\.xlsx/);
+        assert.match(failure.message, /sheet: main/);
+        assert.match(failure.message, /field: id/);
+        assert.match(failure.message, /checker: @unique/);
+        assert.match(failure.message, /A2: 1/);
+        assert.match(failure.message, /unique error: location=A3/);
+        assert.match(failure.message, /A3: 1/);
+        assert.match(failure.message, /unique error: location=A2/);
+    } finally {
+        clearAllContexts();
+    }
+};
+
 export const runCheckerRegressionTests = async () => {
     runParseCheckerTests();
     runReferBindingTests();
@@ -704,4 +747,5 @@ export const runCheckerRegressionTests = async () => {
     runUniqueCheckerTests();
     runForceCheckerPipelineTests();
     runReferCheckerPipelineTests();
+    runCheckerAggregationTests();
 };

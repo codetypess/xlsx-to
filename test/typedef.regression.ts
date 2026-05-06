@@ -154,7 +154,12 @@ export const runTypedefRegressionTests = async () => {
 
         typedefSourceSheet.data["1"] = makeRow({
             comment: xlsx.makeCell("", "string?", "A1", ""),
-            key1: xlsx.makeCell("RegressionInferredIdArgs", "string", "B1", "RegressionInferredIdArgs"),
+            key1: xlsx.makeCell(
+                "RegressionInferredIdArgs",
+                "string",
+                "B1",
+                "RegressionInferredIdArgs"
+            ),
             key2: xlsx.makeCell("id", "string", "C1", "id"),
             value_type: xlsx.makeCell("id", "string", "D1", "id"),
             value_comment: xlsx.makeCell("identifier", "string?", "E1", "identifier"),
@@ -250,13 +255,19 @@ export const runTypedefRegressionTests = async () => {
             failure = e as Error;
         }
         assert(failure);
+        assert.match(failure.message, /tag: typedef-field-checker writer: client/);
+        assert.match(failure.message, /builtin check:/);
         assert.match(failure.message, /field: args\.id/);
         assert.match(failure.message, /checker: #coin\.id/);
-        assert.match(failure.message, /typedef: RegressionNestedArgs -> RegressionCollectCoinArgs\.id/);
+        assert.match(
+            failure.message,
+            /typedef: RegressionNestedArgs -> RegressionCollectCoinArgs\.id/
+        );
         assert.match(
             failure.message,
             /defined: test\/regression\/typedef-field-checker\.xlsx#typedef G2/
         );
+        assert.match(failure.message, /values:[\s\S]*A2\.id: 404/);
         assert.match(failure.message, /A2\.id: 404/);
 
         xlsx.removeContext(ctx);

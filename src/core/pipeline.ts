@@ -527,35 +527,41 @@ export const performProcessor = async (stage: ProcessorOption["stage"], writer?:
             continue;
         }
         setRunningContext(ctx);
-        console.log(`performing processor: stage=${stage} writer=${ctx.writer} tag=${ctx.tag}`);
-        for (const workbook of ctx.workbooks) {
-            const arr: ProcessorEntry[] = [];
-            for (const sheet of workbook.sheets) {
-                for (const { name, args } of sheet.processors) {
-                    const processor = processors[name];
-                    if (processor.option.stage !== stage || settings.suppressProcessors.has(name)) {
-                        continue;
+        try {
+            console.log(`performing processor: stage=${stage} writer=${ctx.writer} tag=${ctx.tag}`);
+            for (const workbook of ctx.workbooks) {
+                const arr: ProcessorEntry[] = [];
+                for (const sheet of workbook.sheets) {
+                    for (const { name, args } of sheet.processors) {
+                        const processor = processors[name];
+                        if (
+                            processor.option.stage !== stage ||
+                            settings.suppressProcessors.has(name)
+                        ) {
+                            continue;
+                        }
+                        arr.push({
+                            processor,
+                            sheet,
+                            args,
+                            name,
+                        });
                     }
-                    arr.push({
-                        processor,
-                        sheet,
-                        args,
-                        name,
-                    });
+                }
+                arr.sort((a, b) => a.processor.option.priority - b.processor.option.priority);
+                for (const { processor, sheet, args, name } of arr) {
+                    using _ = trace(
+                        `Performing processor '${name}' in '${workbook.path}#${sheet.name}'`
+                    );
+                    try {
+                        await processor.exec(workbook, sheet, ...args);
+                    } catch (e) {
+                        error((e as Error).stack ?? String(e));
+                    }
                 }
             }
-            arr.sort((a, b) => a.processor.option.priority - b.processor.option.priority);
-            for (const { processor, sheet, args, name } of arr) {
-                using _ = trace(
-                    `Performing processor '${name}' in '${workbook.path}#${sheet.name}'`
-                );
-                try {
-                    await processor.exec(workbook, sheet, ...args);
-                } catch (e) {
-                    error((e as Error).stack ?? String(e));
-                }
-            }
+        } finally {
+            clearRunningContext();
         }
-        clearRunningContext();
     }
 };

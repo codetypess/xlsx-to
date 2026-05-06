@@ -283,6 +283,23 @@ const runStringifyAndIndexerTests = () => {
     assert.equal(xlsx.convertValue(sameCell, "int"), sameCell);
     assert.deepEqual(xlsx.convertValue("[1, 2, 3]", "int[]"), [1, 2, 3]);
     assert.equal(xlsx.convertValue(makeCell("", "string?", "A2"), "int?").v, null);
+    assert.equal(xlsx.convertValue("1", "bool"), true);
+    assert.equal(xlsx.convertValue("x", "bool"), false);
+    assert.equal(xlsx.convertValue("3.25", "float"), 3.25);
+    assert.deepEqual(xlsx.convertValue('{foo: 1, nested: ["a", 2]}', "json"), {
+        foo: 1,
+        nested: ["a", 2],
+    });
+    assert.deepEqual(xlsx.convertValue('["a,b", "c"]', "string[]"), ["a,b", "c"]);
+    assert.deepEqual(xlsx.convertValue("{1, 2, 3}", "table"), [1, 2, 3]);
+    assert.deepEqual(xlsx.convertValue('{foo = 1, bar = {2, 3}, "tail"}', "table"), {
+        1: "tail",
+        foo: 1,
+        bar: [2, 3],
+    });
+    assert.throws(() => xlsx.convertValue("12.5", "int"), /Convert value error: '12\.5'/);
+    assert.throws(() => xlsx.convertValue("[1, 2]", "int[3]"), /type 'int\[3\]'/);
+    assert.throws(() => xlsx.convertValue("{foo = bar-baz}", "table"), /type 'table'/);
 
     const status = {
         "!enum": "ProjectStatus",
